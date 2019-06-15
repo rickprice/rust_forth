@@ -1,5 +1,10 @@
-fn main() {
-    println!("Hello, world!");
+use exit::Exit;
+use rust_forth::ForthErr;
 
-    rust_forth::run();
+fn main() -> Exit<ForthErr> {   
+     println!("Hello, world!");
+
+    rust_forth::run()?;
+
+    Exit::Ok
 }

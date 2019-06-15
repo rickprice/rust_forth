@@ -1,5 +1,5 @@
 #![feature(try_trait)]
-use exit::Exit;
+//use exit::Exit;
 
 use std::option;
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ pub enum Token {
     Command(String),
 }
 
-static mut command_map: HashMap<&String, Vec<Token>> = HashMap::new();
+static mut command_map: HashMap<String, Vec<Token>> = HashMap::new();
 
 pub fn tokenize_string(s: &str) -> Vec<Token> {
     s.split_whitespace()
@@ -58,7 +58,7 @@ match t {
         "predefined1"=>println!("found predefined1"),
         "predefined2"=>println!("found predefined2"),
         s =>{
-            match command_map.get(s.as_ref()) {
+            match command_map.get(s) {
                 Some(tl)=>execute_token_list(tl),
                 None=>return Err(ForthErr::UnknownToken),
             }

@@ -8,6 +8,7 @@ use std::option;
 pub enum ForthErr {
     UnknownError,
     UnknownToken,
+    PopOfEmptyStack,
     XParseErrorUserNum,
     XParseErrorGroupNum,
 }
@@ -17,8 +18,9 @@ impl From<ForthErr> for i32 {
         match err {
             ForthErr::UnknownError => 2,
             ForthErr::UnknownToken => 3,
-            ForthErr::XParseErrorUserNum => 4,
-            ForthErr::XParseErrorGroupNum => 5,
+            ForthErr::PopOfEmptyStack => 4,
+            ForthErr::XParseErrorUserNum => 5,
+            ForthErr::XParseErrorGroupNum => 6,
         }
     }
 }
@@ -48,16 +50,20 @@ impl RustForth {
         }
     }
 
-    pub fn execute_token(&self, t: Token) -> Result<(), ForthErr> {
+    pub fn execute_token(&mut self, t: Token) -> Result<(), ForthErr> {
         match t {
-            Token::Number(n) => RustForth::push_stack(n),
+            Token::Number(n) => self.push_stack(n),
             Token::Command(s) => {
                 println!("Execute token {}", s);
                 match s.as_ref() {
                     "predefined1" => println!("found predefined1"),
                     "predefined2" => println!("found predefined2"),
+                    "pop" => match self.pop_stack() {
+                        Some(_) => (),
+                        None => return Err(ForthErr::PopOfEmptyStack),
+                    },
                     s => match self.command_map.get(s) {
-                        Some(tl) => RustForth::execute_token_list(tl),
+                        Some(tl) => self.execute_token_list(tl),
                         None => return Err(ForthErr::UnknownToken),
                     },
                 }
@@ -76,16 +82,22 @@ impl RustForth {
             .collect()
     }
 
-    pub fn execute_token_list(tl: &Vec<Token>) {
+    pub fn execute_token_list(&self, tl: &Vec<Token>) {
         println!("Executing token list {:?}", tl);
+
+        for x in tl.iter() {
+            println!("> {:?}", x);
+        }
     }
 
-    fn push_stack(n: u64) {
+    fn push_stack(&mut self, n: u64) {
         println!("Pushed {} on stack", n);
+        self.number_stack.push(n);
     }
 
-    fn pop_stack() {
+    fn pop_stack(&mut self) -> Option<u64> {
         println!("Popped stack");
+        self.number_stack.pop()
     }
 }
 

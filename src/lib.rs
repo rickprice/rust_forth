@@ -2,9 +2,9 @@
 //use exit::Exit;
 
 use std::collections::HashMap;
-use std::option;
 use std::fs::File;
-
+use std::io::{BufRead, BufReader};
+use std::option;
 
 #[derive(Debug)]
 pub enum ForthErr {
@@ -102,8 +102,15 @@ impl RustForth {
         self.number_stack.pop()
     }
 
-    fn initialize_commands_from_file(f :File)->Result<(),IOError> {
+    fn initialize_commands_from_file(&mut self, f: File) {
+        let reader = BufReader::new(f);
 
+        // Read the file line by line using the lines() iterator from std::io::BufRead.
+        for (index, line) in reader.lines().enumerate() {
+            let line = line.unwrap(); // Ignore errors.
+                                      // Show the line and its number.
+            println!("{}. {}", index + 1, line);
+        }
     }
 }
 

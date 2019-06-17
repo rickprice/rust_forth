@@ -3,6 +3,8 @@
 
 use std::collections::HashMap;
 use std::option;
+use std::fs::File;
+
 
 #[derive(Debug)]
 pub enum ForthErr {
@@ -98,6 +100,10 @@ impl RustForth {
     fn pop_stack(&mut self) -> Option<u64> {
         println!("Popped stack");
         self.number_stack.pop()
+    }
+
+    fn initialize_commands_from_file(f :File)->Result<(),IOError> {
+
     }
 }
 

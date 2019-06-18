@@ -146,7 +146,7 @@ pub fn run() -> Result<(), ForthErr> {
 
     let x = RustForth::tokenize_string("abc 123 def 456 ghi")?;
 
-    let f = File::open("init.forth")?;
+    let f = File::open("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
     rf.initialize_commands_from_file(f)?;
 
     println!("tokenized string: {:?}", x);

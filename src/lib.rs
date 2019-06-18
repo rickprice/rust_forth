@@ -1,9 +1,7 @@
 #![feature(try_trait)]
-//use exit::Exit;
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Error;
 use std::io::{BufRead, BufReader};
 use std::option;
 
@@ -86,13 +84,13 @@ impl RustForth {
         Ok(())
     }
 
-    pub fn tokenize_string(s: &str) -> Vec<Token> {
-        s.split_whitespace()
+    pub fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
+        Ok(s.split_whitespace()
             .map(|x| match x.parse::<u64>() {
                 Ok(n) => Token::Number(n),
                 Err(_) => Token::Command(x.to_owned()),
             })
-            .collect()
+            .collect())
     }
 
     pub fn execute_token_list(&self, tl: &Vec<Token>) {
@@ -133,11 +131,10 @@ impl RustForth {
         for line in reader.lines() {
             let line = line?;
 
-            let (command, command_list) = RustForth::split_command_initializer_line(&line)?;
+            let (command, command_list_string) = RustForth::split_command_initializer_line(&line)?;
+            let token_list = RustForth::tokenize_string(command_list_string)?;
 
-            //            let line = line?;         // Show the line and its number.
-            //            t,tl =
-            //            println!("{}. {}", index + 1, line);
+            self.command_map.insert(command.to_string(), token_list);
         }
 
         Ok(())
@@ -145,7 +142,12 @@ impl RustForth {
 }
 
 pub fn run() -> Result<(), ForthErr> {
-    let x = RustForth::tokenize_string("abc 123 def 456 ghi");
+    let mut rf = RustForth::new();
+
+    let x = RustForth::tokenize_string("abc 123 def 456 ghi")?;
+
+    let f = File::open("init.forth")?;
+    rf.initialize_commands_from_file(f)?;
 
     println!("tokenized string: {:?}", x);
 

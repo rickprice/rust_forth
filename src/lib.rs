@@ -115,8 +115,14 @@ impl RustForth {
 
     fn split_command_initializer_line(in_string: &str) -> Result<(&str, &str), ForthErr> {
         let mut splitter = in_string.splitn(2, "=>");
-        let first = splitter.next().ok_or(ForthErr::InvalidInitializationLine)?;
-        let second = splitter.next().ok_or(ForthErr::InvalidInitializationLine)?;
+        let first = splitter
+            .next()
+            .ok_or(ForthErr::InvalidInitializationLine)?
+            .trim();
+        let second = splitter
+            .next()
+            .ok_or(ForthErr::InvalidInitializationLine)?
+            .trim();
         Ok((first, second))
     }
 

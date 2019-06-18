@@ -61,9 +61,9 @@ impl RustForth {
         }
     }
 
-    pub fn execute_token(&mut self, t: Token) -> Result<(), ForthErr> {
+    pub fn execute_token(&mut self, t: &Token) -> Result<(), ForthErr> {
         match t {
-            Token::Number(n) => self.push_stack(n),
+            Token::Number(n) => self.push_stack(*n),
             Token::Command(s) => {
                 println!("Execute token {}", s);
                 match s.as_ref() {
@@ -74,7 +74,7 @@ impl RustForth {
                         None => return Err(ForthErr::PopOfEmptyStack),
                     },
                     s => match self.command_map.get(s) {
-                        Some(tl) => self.execute_token_list(tl),
+                        Some(tl) => self.execute_token_list(tl)?,
                         None => return Err(ForthErr::UnknownToken),
                     },
                 }
@@ -93,12 +93,15 @@ impl RustForth {
             .collect())
     }
 
-    pub fn execute_token_list(&self, tl: &Vec<Token>) {
+    pub fn execute_token_list(&mut self, tl: &Vec<Token>)->Result<(),ForthErr> {
         println!("Executing token list {:?}", tl);
 
-        for x in tl.iter() {
-            println!("> {:?}", x);
+        for t in tl.iter() {
+            println!("> {:?}", t);
+            self.execute_token(t)?;
         }
+
+        Ok(())
     }
 
     fn push_stack(&mut self, n: u64) {

@@ -73,10 +73,7 @@ impl RustForth {
                         Some(_) => (),
                         None => return Err(ForthErr::PopOfEmptyStack),
                     },
-                    s => match self.command_map.get(s) {
-                        Some(tl) => self.execute_token_list(tl)?,
-                        None => return Err(ForthErr::UnknownToken),
-                    },
+                    s => self.execute_token_list(s)?,
                 }
             }
         }
@@ -93,14 +90,21 @@ impl RustForth {
             .collect())
     }
 
-    pub fn execute_token_list(&mut self, tl: &Vec<Token>)->Result<(),ForthErr> {
-        println!("Executing token list {:?}", tl);
+    pub fn execute_token_list(&mut self, s: &str) -> Result<(), ForthErr> {
+                println!("Executing token list {:?} for {}", tl,s);
 
-        for t in tl.iter() {
-            println!("> {:?}", t);
-            self.execute_token(t)?;
-        }
+                match self.command_map.get(s) {
+                    Some(tl)=>{
+                for t in tl.iter() {
+                    println!("> {:?}", t);
+                    self.execute_token(t)?;
+                    
+                };
+                    },
+                    None=>return ForthErr::UnknownToken;,
+                }
 
+        
         Ok(())
     }
 

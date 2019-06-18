@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Error;
 use std::io::{BufRead, BufReader};
 use std::option;
 
@@ -13,6 +14,14 @@ pub enum ForthErr {
     PopOfEmptyStack,
     XParseErrorUserNum,
     XParseErrorGroupNum,
+    InvalidInitializationLine,
+    Io(std::io::Error),
+}
+
+impl From<std::io::Error> for ForthErr {
+    fn from(err: std::io::Error) -> ForthErr {
+        ForthErr::Io(err)
+    }
 }
 
 impl From<ForthErr> for i32 {
@@ -23,6 +32,8 @@ impl From<ForthErr> for i32 {
             ForthErr::PopOfEmptyStack => 4,
             ForthErr::XParseErrorUserNum => 5,
             ForthErr::XParseErrorGroupNum => 6,
+            ForthErr::InvalidInitializationLine => 7,
+            ForthErr::Io(_) => 8,
         }
     }
 }
@@ -102,15 +113,28 @@ impl RustForth {
         self.number_stack.pop()
     }
 
-    fn initialize_commands_from_file(&mut self, f: File) {
+    fn split_command_initializer_line(in_string: &str) -> Result<(&str, &str), ForthErr> {
+        let mut splitter = in_string.splitn(2, "=>");
+        let first = splitter.next().ok_or(ForthErr::InvalidInitializationLine)?;
+        let second = splitter.next().ok_or(ForthErr::InvalidInitializationLine)?;
+        Ok((first, second))
+    }
+
+    fn initialize_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
         let reader = BufReader::new(f);
 
         // Read the file line by line using the lines() iterator from std::io::BufRead.
-        for (index, line) in reader.lines().enumerate() {
-            let line = line.unwrap(); // Ignore errors.
-                                      // Show the line and its number.
-            println!("{}. {}", index + 1, line);
+        for line in reader.lines() {
+            let line = line?;
+
+            let (command, command_list) = RustForth::split_command_initializer_line(&line)?;
+
+            //            let line = line?;         // Show the line and its number.
+            //            t,tl =
+            //            println!("{}. {}", index + 1, line);
         }
+
+        Ok(())
     }
 }
 

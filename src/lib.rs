@@ -73,7 +73,7 @@ impl RustForth {
                         Ok(_) => (),
                         Err(e) => return Err(e),
                     },
-                    s => self.execute_token_list(s)?,
+                    s => self.execute_token_by_name(s)?,
                 }
             }
         }
@@ -100,7 +100,7 @@ impl RustForth {
         }
     }
 
-    pub fn execute_token_list(&mut self, s: &str) -> Result<(), ForthErr> {
+    pub fn execute_token_by_name(&mut self, s: &str) -> Result<(), ForthErr> {
         let tl = self.get_token_list_for_command(s)?;
 
         println!("Executing token list {:?} for {}", tl, s);

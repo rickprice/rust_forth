@@ -42,7 +42,7 @@ impl From<option::NoneError> for ForthErr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Number(u64),
     Command(String),
@@ -70,13 +70,15 @@ impl RustForth {
                     "predefined1" => println!("found predefined1"),
                     "predefined2" => println!("found predefined2"),
                     "pop" => match self.pop_stack() {
-                        Some(_) => (),
-                        None => return Err(ForthErr::PopOfEmptyStack),
+                        Ok(_) => (),
+                        Err(e) => return Err(e),
                     },
                     s => self.execute_token_list(s)?,
                 }
             }
         }
+
+        println!("State of number stack {:?}", self.number_stack);
 
         Ok(())
     }
@@ -90,21 +92,28 @@ impl RustForth {
             .collect())
     }
 
+    fn get_token_list_for_command(&self, s: &str) -> Result<Vec<Token>, ForthErr> {
+        let tl = self.command_map.get(s);
+        match tl {
+            Some(tl) => Ok(tl.to_vec()),
+            None => return Err(ForthErr::UnknownToken),
+        }
+    }
+
     pub fn execute_token_list(&mut self, s: &str) -> Result<(), ForthErr> {
-                println!("Executing token list {:?} for {}", tl,s);
+        let tl = self.get_token_list_for_command(s)?;
 
-                match self.command_map.get(s) {
-                    Some(tl)=>{
-                for t in tl.iter() {
-                    println!("> {:?}", t);
-                    self.execute_token(t)?;
-                    
-                };
-                    },
-                    None=>return ForthErr::UnknownToken;,
-                }
+        println!("Executing token list {:?} for {}", tl, s);
+        self.execute_token_vector(tl)?;
+        Ok(())
+    }
 
-        
+    pub fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
+        println!("Executing token list {:?}", tl);
+        for t in tl.iter() {
+            println!("> {:?}", t);
+            self.execute_token(t)?;
+        }
         Ok(())
     }
 
@@ -113,9 +122,12 @@ impl RustForth {
         self.number_stack.push(n);
     }
 
-    fn pop_stack(&mut self) -> Option<u64> {
+    fn pop_stack(&mut self) -> Result<u64, ForthErr> {
         println!("Popped stack");
-        self.number_stack.pop()
+        match self.number_stack.pop() {
+            Some(x) => Ok(x),
+            None => Err(ForthErr::PopOfEmptyStack),
+        }
     }
 
     fn split_command_initializer_line(in_string: &str) -> Result<(&str, &str), ForthErr> {
@@ -151,12 +163,14 @@ impl RustForth {
 pub fn run() -> Result<(), ForthErr> {
     let mut rf = RustForth::new();
 
-    let x = RustForth::tokenize_string("abc 123 def 456 ghi")?;
+    let tl = RustForth::tokenize_string("predefined1 123 predefined2 456 pop Numbers")?;
 
     let f = File::open("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
     rf.initialize_commands_from_file(f)?;
 
-    println!("tokenized string: {:?}", x);
+    println!("tokenized string: {:?}", tl);
+
+    rf.execute_token_vector(tl)?;
 
     Ok(())
 }

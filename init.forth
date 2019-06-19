@@ -1,3 +1,6 @@
-Tamara=>I Love Tamara
-Eric =>Eric is Tamaras Son
-Numbers=>1 2 3 4 5 6
+: Tamara I Love ;
+: Eric Tamara Son ;
+: Numbers 1 2 3 4 5 6 ;
+: I 1 ;
+: Love 2 ;
+: Son 3 ;

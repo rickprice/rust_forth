@@ -193,29 +193,13 @@ impl RustForth {
         Ok(())
     }
 
-    fn split_command_initializer_line(in_string: &str) -> Result<(&str, &str), ForthErr> {
-        let mut splitter = in_string.splitn(2, "=>");
-        let first = splitter
-            .next()
-            .ok_or(ForthErr::InvalidInitializationLine)?
-            .trim();
-        let second = splitter
-            .next()
-            .ok_or(ForthErr::InvalidInitializationLine)?
-            .trim();
-        Ok((first, second))
-    }
-
-    pub fn initialize_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
+    pub fn execute_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
         let reader = BufReader::new(f);
 
         for line in reader.lines() {
             let line = line?;
 
-            let (command, command_list_string) = RustForth::split_command_initializer_line(&line)?;
-            let token_list = RustForth::tokenize_string(command_list_string)?;
-
-            self.command_map.insert(command.to_string(), token_list);
+            self.execute_string(&line)?;
         }
 
         Ok(())

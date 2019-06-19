@@ -50,9 +50,15 @@ pub enum Token {
     SemiColon,
 }
 
+enum Mode {
+    Interpreting,
+    Compiling(String),
+}
+
 pub struct RustForth {
     command_map: HashMap<String, Vec<Token>>,
     number_stack: Vec<i64>,
+    mode: Mode,
 }
 
 impl RustForth {
@@ -60,6 +66,7 @@ impl RustForth {
         RustForth {
             command_map: HashMap::new(),
             number_stack: Vec::new(),
+            mode: Mode::Interpreting,
         }
     }
 
@@ -128,10 +135,35 @@ impl RustForth {
     }
 
     fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
-        println!("Executing token list {:?}", tl);
-        for t in tl.iter() {
-            println!("> {:?}", t);
-            self.execute_token(t)?;
+        match &self.mode {
+            Mode::Interpreting => {
+                println!("Interpreting token list {:?}", tl);
+                for t in tl.iter() {
+                    println!("> {:?}", t);
+                    match t {
+                        Token::Colon=>{
+                            self.mode=Mode::Compiling("+++ FIX THIS +++ command string from t");
+                        },
+                        _=>{
+                            self.execute_token(t)?;
+                        }
+                    }
+                }
+            }
+            Mode::Compiling(c) => {
+                let mut ctl = Vec::new();
+                for t in tl.iter() {
+                    println!("> {:?}", t);
+                    match t {
+                        Token::SemiColon=>{
+                            self.command_map.insert(c.clone(),ctl);
+                        },
+                        _=>{
+                            ctl.push(t.clone());
+                        }
+                    }
+                }
+            }
         }
         Ok(())
     }

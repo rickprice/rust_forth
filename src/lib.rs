@@ -115,7 +115,12 @@ impl RustForth {
                 println!("State of number stack {:?}", self.number_stack);
             }
             Mode::Compiling(c) => match t {
-                Token::Number(n) => self.push_stack(*n),
+                Token::Number(n) => {
+                    self.command_map
+                        .entry(c.to_string())
+                        .or_insert(Vec::new())
+                        .push(Token::Number(*n));
+                }
                 Token::Command(s) => {
                     self.command_map
                         .entry(c.to_string())
@@ -182,15 +187,8 @@ impl RustForth {
     fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
         println!("Interpreting token list {:?}", tl);
         for t in tl.iter() {
-            println!("> {:?}", t);
-            match t {
-                Token::Colon(s) => {
-                    self.mode = Mode::Compiling(s.clone());
-                }
-                _ => {
-                    self.execute_token(t)?;
-                }
-            }
+            println!("Executing token vector {:?}", t);
+            self.execute_token(t)?;
         }
         Ok(())
     }

@@ -46,7 +46,7 @@ impl From<option::NoneError> for ForthErr {
 pub enum Token {
     Number(i64),
     Command(String),
-    Colon,
+    Colon(String),
     SemiColon,
 }
 
@@ -81,30 +81,53 @@ impl RustForth {
     }
 
     fn execute_token(&mut self, t: &Token) -> Result<(), ForthErr> {
-        match t {
-            Token::Number(n) => self.push_stack(*n),
-            Token::Command(s) => {
-                println!("Execute token {}", s);
-                match s.as_ref() {
-                    "predefined1" => println!("found predefined1"),
-                    "predefined2" => println!("found predefined2"),
-                    "pop" => match self.pop_stack() {
-                        Ok(_) => (),
-                        Err(e) => return Err(e),
-                    },
-                    "add" => self.internal_add()?,
-                    "sub" => self.internal_sub()?,
-                    "mul" => self.internal_mul()?,
-                    "div" => self.internal_div()?,
-                    "dup" => self.internal_dup()?,
-                    s => self.execute_token_by_name(s)?,
+        match &self.mode {
+            Mode::Interpreting => {
+                match t {
+                    Token::Number(n) => self.push_stack(*n),
+                    Token::Command(s) => {
+                        println!("Execute token {}", s);
+                        match s.as_ref() {
+                            "predefined1" => println!("found predefined1"),
+                            "predefined2" => println!("found predefined2"),
+                            "pop" => match self.pop_stack() {
+                                Ok(_) => (),
+                                Err(e) => return Err(e),
+                            },
+                            "add" => self.internal_add()?,
+                            "sub" => self.internal_sub()?,
+                            "mul" => self.internal_mul()?,
+                            "div" => self.internal_div()?,
+                            "dup" => self.internal_dup()?,
+                            s => self.execute_token_by_name(s)?,
+                        }
+                    }
+                    Token::Colon(s) => {
+                        self.mode = Mode::Compiling(String::from(s));
+                    }
+                    Token::SemiColon => {
+                        panic!("Token::SemiColon case should not happen here");
+                    }
                 }
-            }
-            Token::Colon => (),
-            Token::SemiColon => (),
-        }
 
-        println!("State of number stack {:?}", self.number_stack);
+                println!("State of number stack {:?}", self.number_stack);
+            }
+            Mode::Compiling(c) => match t {
+                Token::Number(n) => self.push_stack(*n),
+                Token::Command(s) => {
+                    self.command_map
+                        .entry(c.to_string())
+                        .or_insert(Vec::new())
+                        .push(Token::Command(s.to_string()));
+                }
+                Token::Colon(_) => {
+                    panic!("Token::Colon case should not happen here");
+                }
+                Token::SemiColon => {
+                    self.mode = Mode::Interpreting;
+                }
+            },
+        }
 
         Ok(())
     }
@@ -135,33 +158,15 @@ impl RustForth {
     }
 
     fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
-        match &self.mode {
-            Mode::Interpreting => {
-                println!("Interpreting token list {:?}", tl);
-                for t in tl.iter() {
-                    println!("> {:?}", t);
-                    match t {
-                        Token::Colon=>{
-                            self.mode=Mode::Compiling("+++ FIX THIS +++ command string from t");
-                        },
-                        _=>{
-                            self.execute_token(t)?;
-                        }
-                    }
+        println!("Interpreting token list {:?}", tl);
+        for t in tl.iter() {
+            println!("> {:?}", t);
+            match t {
+                Token::Colon(s) => {
+                    self.mode = Mode::Compiling(s.clone());
                 }
-            }
-            Mode::Compiling(c) => {
-                let mut ctl = Vec::new();
-                for t in tl.iter() {
-                    println!("> {:?}", t);
-                    match t {
-                        Token::SemiColon=>{
-                            self.command_map.insert(c.clone(),ctl);
-                        },
-                        _=>{
-                            ctl.push(t.clone());
-                        }
-                    }
+                _ => {
+                    self.execute_token(t)?;
                 }
             }
         }
@@ -184,7 +189,6 @@ impl RustForth {
     pub fn initialize_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
         let reader = BufReader::new(f);
 
-        // Read the file line by line using the lines() iterator from std::io::BufRead.
         for line in reader.lines() {
             let line = line?;
 

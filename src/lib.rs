@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader};
 use std::option;
 
 #[derive(Debug)]
-pub enum ForthErr {
+pub enum ForthError {
     UnknownError,
     UnknownToken,
     PopOfEmptyStack,
@@ -17,30 +17,30 @@ pub enum ForthErr {
     Io(std::io::Error),
 }
 
-impl From<std::io::Error> for ForthErr {
-    fn from(err: std::io::Error) -> ForthErr {
-        ForthErr::Io(err)
+impl From<std::io::Error> for ForthError {
+    fn from(err: std::io::Error) -> ForthError {
+        ForthError::Io(err)
     }
 }
 
-impl From<ForthErr> for i32 {
-    fn from(err: ForthErr) -> Self {
+impl From<ForthError> for i32 {
+    fn from(err: ForthError) -> Self {
         match err {
-            ForthErr::UnknownError => 2,
-            ForthErr::UnknownToken => 3,
-            ForthErr::PopOfEmptyStack => 4,
-            ForthErr::XParseErrorUserNum => 5,
-            ForthErr::XParseErrorGroupNum => 6,
-            ForthErr::InvalidInitializationLine => 7,
-            ForthErr::InvalidSyntax(_) => 8,
-            ForthErr::Io(_) => 9,
+            ForthError::UnknownError => 2,
+            ForthError::UnknownToken => 3,
+            ForthError::PopOfEmptyStack => 4,
+            ForthError::XParseErrorUserNum => 5,
+            ForthError::XParseErrorGroupNum => 6,
+            ForthError::InvalidInitializationLine => 7,
+            ForthError::InvalidSyntax(_) => 8,
+            ForthError::Io(_) => 9,
         }
     }
 }
 
-impl From<option::NoneError> for ForthErr {
+impl From<option::NoneError> for ForthError {
     fn from(_: option::NoneError) -> Self {
-        ForthErr::UnknownError
+        ForthError::UnknownError
     }
 }
 
@@ -72,7 +72,7 @@ impl RustForth {
         }
     }
 
-    pub fn execute_string(&mut self, s: &str) -> Result<(), ForthErr> {
+    pub fn execute_string(&mut self, s: &str) -> Result<(), ForthError> {
         let tl = RustForth::tokenize_string(s)?;
 
         println!("tokenized string: {:?}", tl);
@@ -82,7 +82,7 @@ impl RustForth {
         Ok(())
     }
 
-    fn execute_token(&mut self, t: &Token) -> Result<(), ForthErr> {
+    fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
         match &self.mode {
             Mode::Interpreting => {
                 match t {
@@ -139,7 +139,7 @@ impl RustForth {
         Ok(())
     }
 
-    fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
+    fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthError> {
         let mut tl = Vec::new();
 
         let mut string_iter = s.split_whitespace();
@@ -154,7 +154,7 @@ impl RustForth {
                             ":" => match &string_iter.next() {
                                 Some(next_token) => Token::Colon(next_token.to_string()),
                                 None => {
-                                    return Err(ForthErr::InvalidSyntax(String::from(
+                                    return Err(ForthError::InvalidSyntax(String::from(
                                         "No token after :",
                                     )))
                                 }
@@ -168,15 +168,15 @@ impl RustForth {
         }
     }
 
-    fn get_token_list_for_command(&self, s: &str) -> Result<Vec<Token>, ForthErr> {
+    fn get_token_list_for_command(&self, s: &str) -> Result<Vec<Token>, ForthError> {
         let tl = self.command_map.get(s);
         match tl {
             Some(tl) => Ok(tl.to_vec()),
-            None => return Err(ForthErr::UnknownToken),
+            None => return Err(ForthError::UnknownToken),
         }
     }
 
-    fn execute_token_by_name(&mut self, s: &str) -> Result<(), ForthErr> {
+    fn execute_token_by_name(&mut self, s: &str) -> Result<(), ForthError> {
         let tl = self.get_token_list_for_command(s)?;
 
         println!("Executing token list {:?} for {}", tl, s);
@@ -184,7 +184,7 @@ impl RustForth {
         Ok(())
     }
 
-    fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
+    fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthError> {
         println!("Interpreting token list {:?}", tl);
         for t in tl.iter() {
             println!("Executing token vector {:?}", t);
@@ -193,7 +193,7 @@ impl RustForth {
         Ok(())
     }
 
-    pub fn execute_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
+    pub fn execute_commands_from_file(&mut self, f: File) -> Result<(), ForthError> {
         let reader = BufReader::new(f);
 
         for line in reader.lines() {
@@ -212,17 +212,17 @@ impl RustForth {
         self.number_stack.push(n);
     }
 
-    fn pop_stack(&mut self) -> Result<i64, ForthErr> {
+    fn pop_stack(&mut self) -> Result<i64, ForthError> {
         println!("Popped stack");
         match self.number_stack.pop() {
             Some(x) => Ok(x),
-            None => Err(ForthErr::PopOfEmptyStack),
+            None => Err(ForthError::PopOfEmptyStack),
         }
     }
 }
 
 impl RustForth {
-    fn internal_mul(&mut self) -> Result<(), ForthErr> {
+    fn internal_mul(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
         let y = self.pop_stack()?;
         let result = x * y;
@@ -234,7 +234,7 @@ impl RustForth {
         Ok(())
     }
 
-    fn internal_div(&mut self) -> Result<(), ForthErr> {
+    fn internal_div(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
         let y = self.pop_stack()?;
         let result = x / y;
@@ -245,7 +245,7 @@ impl RustForth {
 
         Ok(())
     }
-    fn internal_add(&mut self) -> Result<(), ForthErr> {
+    fn internal_add(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
         let y = self.pop_stack()?;
         let result = x + y;
@@ -256,7 +256,7 @@ impl RustForth {
 
         Ok(())
     }
-    fn internal_sub(&mut self) -> Result<(), ForthErr> {
+    fn internal_sub(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
         let y = self.pop_stack()?;
         let result = x - y;
@@ -267,7 +267,7 @@ impl RustForth {
 
         Ok(())
     }
-    fn internal_dup(&mut self) -> Result<(), ForthErr> {
+    fn internal_dup(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
 
         self.push_stack(x);

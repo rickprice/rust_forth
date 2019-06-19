@@ -13,6 +13,7 @@ pub enum ForthErr {
     XParseErrorUserNum,
     XParseErrorGroupNum,
     InvalidInitializationLine,
+    InvalidSyntax(String),
     Io(std::io::Error),
 }
 
@@ -31,7 +32,8 @@ impl From<ForthErr> for i32 {
             ForthErr::XParseErrorUserNum => 5,
             ForthErr::XParseErrorGroupNum => 6,
             ForthErr::InvalidInitializationLine => 7,
-            ForthErr::Io(_) => 8,
+            ForthErr::InvalidSyntax(_) => 8,
+            ForthErr::Io(_) => 9,
         }
     }
 }
@@ -133,17 +135,32 @@ impl RustForth {
     }
 
     fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
-        Ok(s.split_whitespace()
-            .map(|x| match x.parse::<i64>() {
-                Ok(n) => Token::Number(n),
-                Err(_) => match x {
-                    // This is actually broken, we need to get the token after the ':'
-                    ":" => Token::Colon(x.to_owned()),
-                    ";" => Token::SemiColon,
-                    _ => Token::Command(x.to_owned()),
-                },
-            })
-            .collect())
+        let mut tl = Vec::new();
+
+        let mut string_iter = s.split_whitespace();
+
+        loop {
+            match string_iter.next() {
+                None => return Ok(tl),
+                Some(string_token) => {
+                    tl.push(match string_token.parse::<i64>() {
+                        Ok(n) => Token::Number(n),
+                        Err(_) => match string_token {
+                            ":" => match &string_iter.next() {
+                                Some(next_token) => Token::Colon(next_token.to_string()),
+                                None => {
+                                    return Err(ForthErr::InvalidSyntax(String::from(
+                                        "No token after :",
+                                    )))
+                                }
+                            },
+                            ";" => Token::SemiColon,
+                            _ => Token::Command(string_token.to_owned()),
+                        },
+                    });
+                }
+            }
+        }
     }
 
     fn get_token_list_for_command(&self, s: &str) -> Result<Vec<Token>, ForthErr> {

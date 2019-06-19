@@ -136,7 +136,11 @@ impl RustForth {
         Ok(s.split_whitespace()
             .map(|x| match x.parse::<i64>() {
                 Ok(n) => Token::Number(n),
-                Err(_) => Token::Command(x.to_owned()),
+                Err(_) => match x {
+                    ":" => Token::Colon(x.to_owned()),
+                    ";" => Token::SemiColon,
+                    _ => Token::Command(x.to_owned()),
+                },
             })
             .collect())
     }

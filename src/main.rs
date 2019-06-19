@@ -19,6 +19,8 @@ fn run() -> Result<(), ForthErr> {
 
     rf.execute_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
 
+    rf.execute_string(": RickCommand 123456 dup add ; RickCommand")?;
+
 /*
     let tl = RustForth::tokenize_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
 

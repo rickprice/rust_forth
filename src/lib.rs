@@ -46,6 +46,8 @@ impl From<option::NoneError> for ForthErr {
 pub enum Token {
     Number(i64),
     Command(String),
+    Colon,
+    SemiColon,
 }
 
 pub struct RustForth {
@@ -61,7 +63,17 @@ impl RustForth {
         }
     }
 
-    pub fn execute_token(&mut self, t: &Token) -> Result<(), ForthErr> {
+    pub fn execute_string(&mut self, s: &str) -> Result<(), ForthErr> {
+        let tl = RustForth::tokenize_string(s)?;
+
+        println!("tokenized string: {:?}", tl);
+
+        self.execute_token_vector(tl)?;
+
+        Ok(())
+    }
+
+    fn execute_token(&mut self, t: &Token) -> Result<(), ForthErr> {
         match t {
             Token::Number(n) => self.push_stack(*n),
             Token::Command(s) => {
@@ -81,6 +93,8 @@ impl RustForth {
                     s => self.execute_token_by_name(s)?,
                 }
             }
+            Token::Colon => (),
+            Token::SemiColon => (),
         }
 
         println!("State of number stack {:?}", self.number_stack);
@@ -88,7 +102,7 @@ impl RustForth {
         Ok(())
     }
 
-    pub fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
+    fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
         Ok(s.split_whitespace()
             .map(|x| match x.parse::<i64>() {
                 Ok(n) => Token::Number(n),
@@ -105,7 +119,7 @@ impl RustForth {
         }
     }
 
-    pub fn execute_token_by_name(&mut self, s: &str) -> Result<(), ForthErr> {
+    fn execute_token_by_name(&mut self, s: &str) -> Result<(), ForthErr> {
         let tl = self.get_token_list_for_command(s)?;
 
         println!("Executing token list {:?} for {}", tl, s);
@@ -113,7 +127,7 @@ impl RustForth {
         Ok(())
     }
 
-    pub fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
+    fn execute_token_vector(&mut self, tl: Vec<Token>) -> Result<(), ForthErr> {
         println!("Executing token list {:?}", tl);
         for t in tl.iter() {
             println!("> {:?}", t);
@@ -135,7 +149,7 @@ impl RustForth {
         Ok((first, second))
     }
 
-    fn initialize_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
+    pub fn initialize_commands_from_file(&mut self, f: File) -> Result<(), ForthErr> {
         let reader = BufReader::new(f);
 
         // Read the file line by line using the lines() iterator from std::io::BufRead.
@@ -223,19 +237,4 @@ impl RustForth {
 
         Ok(())
     }
-}
-
-pub fn run() -> Result<(), ForthErr> {
-    let mut rf = RustForth::new();
-
-    let tl = RustForth::tokenize_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
-
-    let f = File::open("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
-    rf.initialize_commands_from_file(f)?;
-
-    println!("tokenized string: {:?}", tl);
-
-    rf.execute_token_vector(tl)?;
-
-    Ok(())
 }

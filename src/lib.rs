@@ -44,13 +44,13 @@ impl From<option::NoneError> for ForthErr {
 
 #[derive(Debug, Clone)]
 pub enum Token {
-    Number(u64),
+    Number(i64),
     Command(String),
 }
 
 pub struct RustForth {
     command_map: HashMap<String, Vec<Token>>,
-    number_stack: Vec<u64>,
+    number_stack: Vec<i64>,
 }
 
 impl RustForth {
@@ -73,6 +73,11 @@ impl RustForth {
                         Ok(_) => (),
                         Err(e) => return Err(e),
                     },
+                    "add" => self.internal_add()?,
+                    "sub" => self.internal_sub()?,
+                    "mul" => self.internal_mul()?,
+                    "div" => self.internal_div()?,
+                    "dup" => self.internal_dup()?,
                     s => self.execute_token_by_name(s)?,
                 }
             }
@@ -85,7 +90,7 @@ impl RustForth {
 
     pub fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthErr> {
         Ok(s.split_whitespace()
-            .map(|x| match x.parse::<u64>() {
+            .map(|x| match x.parse::<i64>() {
                 Ok(n) => Token::Number(n),
                 Err(_) => Token::Command(x.to_owned()),
             })
@@ -115,19 +120,6 @@ impl RustForth {
             self.execute_token(t)?;
         }
         Ok(())
-    }
-
-    fn push_stack(&mut self, n: u64) {
-        println!("Pushed {} on stack", n);
-        self.number_stack.push(n);
-    }
-
-    fn pop_stack(&mut self) -> Result<u64, ForthErr> {
-        println!("Popped stack");
-        match self.number_stack.pop() {
-            Some(x) => Ok(x),
-            None => Err(ForthErr::PopOfEmptyStack),
-        }
     }
 
     fn split_command_initializer_line(in_string: &str) -> Result<(&str, &str), ForthErr> {
@@ -160,10 +152,83 @@ impl RustForth {
     }
 }
 
+impl RustForth {
+    fn push_stack(&mut self, n: i64) {
+        println!("Pushed {} on stack", n);
+        self.number_stack.push(n);
+    }
+
+    fn pop_stack(&mut self) -> Result<i64, ForthErr> {
+        println!("Popped stack");
+        match self.number_stack.pop() {
+            Some(x) => Ok(x),
+            None => Err(ForthErr::PopOfEmptyStack),
+        }
+    }
+}
+
+impl RustForth {
+    fn internal_mul(&mut self) -> Result<(), ForthErr> {
+        let x = self.pop_stack()?;
+        let y = self.pop_stack()?;
+        let result = x * y;
+
+        self.push_stack(result);
+
+        println!("Multiplied {} by {} resulting in {}", x, y, result);
+
+        Ok(())
+    }
+
+    fn internal_div(&mut self) -> Result<(), ForthErr> {
+        let x = self.pop_stack()?;
+        let y = self.pop_stack()?;
+        let result = x / y;
+
+        self.push_stack(result);
+
+        println!("Divided {} by {} resulting in {}", x, y, result);
+
+        Ok(())
+    }
+    fn internal_add(&mut self) -> Result<(), ForthErr> {
+        let x = self.pop_stack()?;
+        let y = self.pop_stack()?;
+        let result = x + y;
+
+        self.push_stack(result);
+
+        println!("Added {} to {} resulting in {}", x, y, result);
+
+        Ok(())
+    }
+    fn internal_sub(&mut self) -> Result<(), ForthErr> {
+        let x = self.pop_stack()?;
+        let y = self.pop_stack()?;
+        let result = x - y;
+
+        self.push_stack(result);
+
+        println!("Subtracted {} by {} resulting in {}", x, y, result);
+
+        Ok(())
+    }
+    fn internal_dup(&mut self) -> Result<(), ForthErr> {
+        let x = self.pop_stack()?;
+
+        self.push_stack(x);
+        self.push_stack(x);
+
+        println!("Duplicated {} ", x);
+
+        Ok(())
+    }
+}
+
 pub fn run() -> Result<(), ForthErr> {
     let mut rf = RustForth::new();
 
-    let tl = RustForth::tokenize_string("predefined1 123 predefined2 456 pop Numbers")?;
+    let tl = RustForth::tokenize_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
 
     let f = File::open("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
     rf.initialize_commands_from_file(f)?;

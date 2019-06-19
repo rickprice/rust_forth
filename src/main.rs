@@ -1,5 +1,5 @@
 use exit::Exit;
-use rust_forth::ForthError;
+use rust_forth::error::ForthError;
 use rust_forth::RustForth;
 use std::fs::File;
 

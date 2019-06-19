@@ -137,6 +137,7 @@ impl RustForth {
             .map(|x| match x.parse::<i64>() {
                 Ok(n) => Token::Number(n),
                 Err(_) => match x {
+                    // This is actually broken, we need to get the token after the ':'
                     ":" => Token::Colon(x.to_owned()),
                     ";" => Token::SemiColon,
                     _ => Token::Command(x.to_owned()),

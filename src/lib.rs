@@ -48,16 +48,4 @@ impl RustForth {
 
         Ok(())
     }
-
-    pub fn execute_commands_from_file(&mut self, f: File) -> Result<(), ForthError> {
-        let reader = BufReader::new(f);
-
-        for line in reader.lines() {
-            let line = line?;
-
-            self.execute_string(&line)?;
-        }
-
-        Ok(())
-    }
 }

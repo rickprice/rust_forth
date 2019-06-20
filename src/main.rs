@@ -1,8 +1,7 @@
 use exit::Exit;
 use rust_forth::error::ForthError;
 use rust_forth::RustForth;
-use std::fs::File;
-
+use std::fs;
 fn main() -> Exit<ForthError> {
     println!("Hello, world!");
 
@@ -14,8 +13,9 @@ fn main() -> Exit<ForthError> {
 fn run() -> Result<(), ForthError> {
     let mut rf = RustForth::new();
 
-    let f = File::open("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
-    rf.execute_commands_from_file(f)?;
+    let startup =
+        fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
+    rf.execute_string(&startup)?;
 
     rf.execute_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
 

@@ -2,8 +2,6 @@
 
 use error::ForthError;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 
 pub mod error;
 
@@ -47,5 +45,15 @@ impl RustForth {
         self.execute_token_vector(tl)?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
     }
 }

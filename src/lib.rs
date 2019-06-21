@@ -197,14 +197,19 @@ impl ForthInterpreter {
     /// #   fn main() -> Result<(), ForthError> {
     /// #
     ///
-    ///    let mut rf = ForthInterpreter::new();
+    ///     let mut rf = ForthInterpreter::new();
+    ///
+    ///     let mut vector = vec![5_i64,4,3,2,1];
+    ///     rf.access_stack().append(&mut vector);
     ///
     ///     rf.push_stack(123);
     ///     rf.push_stack(321);
     ///
-    ///    rf.execute_string("ADD 2 MUL")?;
+    ///     rf.execute_string("ADD 2 MUL")?;
     ///
-    /// let n = rf.pop_stack();
+    ///     for n in rf.access_stack() {
+    ///         println!("Found {} (backwards) on stack",n)
+    ///     }
     ///
     ///
     /// #

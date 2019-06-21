@@ -1,6 +1,6 @@
 use exit::Exit;
 use rust_forth::error::ForthError;
-use rust_forth::RustForth;
+use rust_forth::ForthInterpreter;
 use std::fs;
 fn main() -> Exit<ForthError> {
     println!("Hello, world!");
@@ -11,7 +11,7 @@ fn main() -> Exit<ForthError> {
 }
 
 fn run() -> Result<(), ForthError> {
-    let mut rf = RustForth::new();
+    let mut rf = ForthInterpreter::new();
 
     let startup =
         fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;

@@ -4,7 +4,7 @@
 //!
 //!
 
-use error::ForthError;
+pub use error::ForthError;
 use std::collections::HashMap;
 
 pub mod error;
@@ -18,7 +18,7 @@ pub mod error;
 /// # use std::error::Error;
 /// use rust_forth::ForthInterpreter;
 /// use std::fs;
-/// use rust_forth::error::ForthError;
+/// use rust_forth::ForthError;
 /// # use exit::Exit;
 /// #
 /// #   fn main() -> Result<(), ForthError> {
@@ -82,7 +82,7 @@ impl ForthInterpreter {
     /// ```
     /// # use std::error::Error;
     /// use rust_forth::ForthInterpreter;
-    /// use rust_forth::error::ForthError;
+    /// use rust_forth::ForthError;
     /// # use exit::Exit;
     /// #
     /// #   fn main() -> Result<(), ForthError> {

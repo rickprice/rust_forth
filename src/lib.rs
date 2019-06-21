@@ -12,13 +12,14 @@ pub mod error;
 ///
 /// ```
 /// # use std::error::Error;
-/// use rust_forth::ForthInterpreter;
 /// use std::fs;
-/// use rust_forth::error::ForthError;
 /// use exit::Exit;
+/// use rust_forth::error::ForthError;
+/// use rust_forth::ForthInterpreter;
 /// #
 /// #   fn main() -> Result<(), ForthError> {
 /// #
+///
 ///    let mut rf = ForthInterpreter::new();
 ///
 ///    let startup = fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;

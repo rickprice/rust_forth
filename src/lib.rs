@@ -17,7 +17,7 @@ pub mod error;
 /// use rust_forth::error::ForthError;
 /// use exit::Exit;
 /// #
-/// #   fn main() -> Result<(), Box<ForthError>> {
+/// #   fn main() -> Result<(), ForthError> {
 /// #
 ///    let mut rf = ForthInterpreter::new();
 ///

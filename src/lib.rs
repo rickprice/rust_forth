@@ -1,5 +1,9 @@
 #![feature(try_trait)]
 
+//! This is documentation for the rust_forth module
+//!
+//!
+
 use error::ForthError;
 use std::collections::HashMap;
 
@@ -12,10 +16,10 @@ pub mod error;
 ///
 /// ```
 /// # use std::error::Error;
-/// use std::fs;
-/// use exit::Exit;
-/// use rust_forth::error::ForthError;
 /// use rust_forth::ForthInterpreter;
+/// use std::fs;
+/// use rust_forth::error::ForthError;
+/// # use exit::Exit;
 /// #
 /// #   fn main() -> Result<(), ForthError> {
 /// #
@@ -25,9 +29,9 @@ pub mod error;
 ///    let startup = fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
 ///    rf.execute_string(&startup)?;
 ///
-///    rf.execute_string("predefined1 123 predefined2 456 pop Numbers mul add dup")?;
+///    rf.execute_string("123 321 ADD 2 MUL")?;
 ///
-///    rf.execute_string(": RickCommand 123456 dup add 777 ; RickCommand RickCommand")?;
+///    rf.execute_string(": TestCommand 123456 DUP ADD 777 ; TestCommand TestCommand")?;
 ///
 /// #
 /// #   Ok(())
@@ -67,6 +71,33 @@ impl ForthInterpreter {
     }
 
     /// This method executes Forth commands contained inside the string, these can be commands to be compiled, or interpreted commands
+    ///
+    /// # Arguments
+    ///
+    /// * 'str' - A string slice that contains forth commands to execute (or compile)
+    ///
+    /// # Example
+    ///
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// use rust_forth::ForthInterpreter;
+    /// use rust_forth::error::ForthError;
+    /// # use exit::Exit;
+    /// #
+    /// #   fn main() -> Result<(), ForthError> {
+    /// #
+    ///
+    ///    let mut rf = ForthInterpreter::new();
+    ///
+    ///    rf.execute_string("123 321 ADD 2 MUL")?;
+    ///
+    ///    rf.execute_string(": TestCommand 123456 DUP ADD 777 ; TestCommand TestCommand")?;
+    ///
+    /// #
+    /// #   Ok(())
+    /// # }
+    /// ```    
     pub fn execute_string(&mut self, s: &str) -> Result<(), ForthError> {
         println!("Executing string: {}", s);
         let tl = ForthInterpreter::tokenize_string(s)?;
@@ -88,15 +119,15 @@ impl ForthInterpreter {
                     Token::Command(s) => {
                         println!("Interpreting token {}", s);
                         match s.as_ref() {
-                            "pop" => match self.pop_stack() {
+                            "POP" => match self.pop_stack() {
                                 Ok(_) => (),
                                 Err(e) => return Err(e),
                             },
-                            "add" => self.internal_add()?,
-                            "sub" => self.internal_sub()?,
-                            "mul" => self.internal_mul()?,
-                            "div" => self.internal_div()?,
-                            "dup" => self.internal_dup()?,
+                            "ADD" => self.internal_add()?,
+                            "SUB" => self.internal_sub()?,
+                            "MUL" => self.internal_mul()?,
+                            "DIV" => self.internal_div()?,
+                            "DUP" => self.internal_dup()?,
                             s => self.execute_token_by_name(s)?,
                         }
                     }

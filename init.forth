@@ -4,5 +4,5 @@
 : I 1 ;
 : Love 2 ;
 : Son 3 ;
-: predefined1 1 pop ;
-: predefined2 2 pop ;
+: predefined1 1 POP ;
+: predefined2 2 POP ;

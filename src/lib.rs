@@ -221,6 +221,13 @@ impl ForthInterpreter {
     }
 }
 
+// This function has two modes, Interpreting, and Compiling.
+// In the Interpreting mode, each token is executed as a command
+// and if the colon is encountered, Compiling mode is entered.
+// In Compiling mode, the tokens are added to the map of commands
+// until a semicolon is encountered, at which point things switch
+// back to Interpreting mode.
+
 impl ForthInterpreter {
     fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
         match &self.mode {
@@ -239,6 +246,7 @@ impl ForthInterpreter {
                             "MUL" => self.internal_mul()?,
                             "DIV" => self.internal_div()?,
                             "DUP" => self.internal_dup()?,
+                            "SWAP" => self.internal_swap()?,
                             s => self.execute_token_by_name(s)?,
                         }
                     }
@@ -384,6 +392,7 @@ impl ForthInterpreter {
 
         Ok(())
     }
+
     fn internal_dup(&mut self) -> Result<(), ForthError> {
         let x = self.pop_stack()?;
 
@@ -394,13 +403,45 @@ impl ForthInterpreter {
 
         Ok(())
     }
+
+    fn internal_swap(&mut self) -> Result<(), ForthError> {
+        let x = self.pop_stack()?;
+        let y = self.pop_stack()?;
+
+        self.push_stack(x);
+        self.push_stack(y);
+
+        println!("Swapped top items on stack {} {}", x, y);
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_execute_string_1() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("ADD 2 MUL").unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 888);
+    }
+
+    #[test]
+    fn test_execute_string_2() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123456);
+        rf.push_stack(111112);
+        rf.execute_string(": TEST ADD 2 SWAP DIV ; TEST").unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 117284);
     }
 }

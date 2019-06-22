@@ -330,7 +330,7 @@ impl ForthInterpreter {
         let tl = self.command_map.get(s);
         match tl {
             Some(tl) => Ok(tl.to_vec()),
-            None => return Err(ForthError::UnknownToken),
+            None => return Err(ForthError::UnknownToken(s.to_owned())),
         }
     }
 

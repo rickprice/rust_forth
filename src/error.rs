@@ -4,7 +4,7 @@ use std::option;
 #[derive(Debug)]
 pub enum ForthError {
     UnknownError,
-    UnknownToken,
+    UnknownToken(String),
     PopOfEmptyStack,
     InvalidSyntax(String),
     Io(std::io::Error),
@@ -23,7 +23,7 @@ impl From<ForthError> for i32 {
     fn from(err: ForthError) -> Self {
         match err {
             ForthError::UnknownError => 2,
-            ForthError::UnknownToken => 3,
+            ForthError::UnknownToken(_) => 3,
             ForthError::PopOfEmptyStack => 4,
             ForthError::InvalidSyntax(_) => 5,
             ForthError::Io(_) => 6,

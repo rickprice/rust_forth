@@ -8,6 +8,8 @@ pub use error::ForthError;
 use std::collections::HashMap;
 
 pub mod error;
+mod state;
+mod tokenHandler::TokenHandler;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -38,6 +40,9 @@ pub mod error;
 /// # }
 /// ```
 pub struct ForthInterpreter {
+    token_handlers : Vec<TokenHandler>,
+    state : State,
+
     command_map: HashMap<String, Vec<Token>>,
     number_stack: Vec<i64>,
     mode: Mode,
@@ -230,6 +235,17 @@ impl ForthInterpreter {
 
 impl ForthInterpreter {
     fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
+
+        for th in self.token_handlers {
+            match th.handle_token(t,self.state) {
+                Handled=>return,
+                UnHandled=>(),
+            }
+        }
+
+
+
+
         match &self.mode {
             Mode::Interpreting => {
                 match t {

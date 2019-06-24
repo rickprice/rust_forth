@@ -1,44 +1,59 @@
 use super::state::State;
-use super::Token;
+use super::error::ForthError;
 
 enum Handled {
     Handled,
     NotHandled,
 }
 
+/// This Enum lists the token types that are used by the Forth interpreter
+#[derive(Debug, Clone)]
+pub enum Token {
+    Number(i64),
+    Command(String),
+    Colon(String),
+    SemiColon,
+}
+
 // Chain of Command Pattern
-trait HandleToken {
+pub trait HandleToken {
     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled,ForthError>;
 }
 
 mod internals {
+    use super::Token;
+    use super::Handled;
+    use super::HandleToken;
+    use super::super::error::ForthError;
+    use super::State;
+use std::collections::HashMap;
+
+
     pub struct ForthInternalCommandHandler {
 
     }
 
-    impl ForthInternalCommandHandler {
+    impl HandleToken for ForthInternalCommandHandler {
         fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled,ForthError> {
                 match t {
                     Token::Command(s) => {
                         println!("Interpreting token {}", s);
                         match s.as_ref() {
-                            "POP" => match self.pop_stack(st) {
-                                Ok(_) => (),
-                                Err(e) => return Err(e),
-                            },
-                            "ADD" => self.add(st)?,
-                            "SUB" => self.sub(st)?,
-                            "MUL" => self.mul(st)?,
-                            "DIV" => self.div(st)?,
-                            "DUP" => self.dup(st)?,
-                            "SWAP" => self.swap(st)?,
-                            _=>Ok(NotHandledToken),
-                        },
+                            "POP" => st.number_stack.pop_stack().map(|_|Ok(Handled::Handled))?,
+                            "ADD" => self.add(st).map(|_|Ok(Handled::Handled))?,
+                            "SUB" => self.sub(st).map(|_|Ok(Handled::Handled))?,
+                            "MUL" => self.mul(st).map(|_|Ok(Handled::Handled))?,
+                            "DIV" => self.div(st).map(|_|Ok(Handled::Handled))?,
+                            "DUP" => self.dup(st).map(|_|Ok(Handled::Handled))?,
+                            "SWAP" => self.swap(st).map(|_|Ok(Handled::Handled))?,
+                            _=>Ok(Handled::NotHandled),
+                        }
                     }
                 }
-                Ok(Handled)
             }
         }
+
+impl ForthInternalCommandHandler {
 
    fn mul(&self,st: &mut State) -> Result<(), ForthError> {
         let x = st.number_stack.pop_stack()?;
@@ -57,7 +72,7 @@ mod internals {
         let y = st.number_stack.pop_stack()?;
         let result = x / y;
 
-        self.st.number_stack.push_stack(result);
+        st.number_stack.push_stack(result);
 
         println!("Divided {} by {} resulting in {}", x, y, result);
 
@@ -69,7 +84,7 @@ mod internals {
         let y = st.number_stack.pop_stack()?;
         let result = x + y;
 
-        self.st.number_stack.push_stack(result);
+        st.number_stack.push_stack(result);
 
         println!("Added {} to {} resulting in {}", x, y, result);
 
@@ -110,27 +125,26 @@ mod internals {
 
         Ok(())
     }        
-
-    pub struct CompiledCommands {
+}
+ /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
+enum Mode {
+    Interpreting,
+    Compiling(String),
+}
+   pub struct CompiledCommands {
    command_map: HashMap<String, Vec<Token>>,
     mode: Mode,
     }
 
-    impl CompiledCommands {
+    impl HandleToken for CompiledCommands {
         fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled,ForthError> {
         match &self.mode {
             Mode::Interpreting => {
                 match t {
-                Token::Number(n) => {
-                    println!("Compiling number {}", n);
-                    self.command_map
-                        .entry(c.to_string())
-                        .or_insert(Vec::new())
-                        .push(Token::Number(*n));
-                },
-                    Token::Command(s) => {
+                     Token::Number(n) => st.number_stack.push_stack(*n),
+                     Token::Command(s) => {
                         println!("Interpreting token {}", s);
-                            self.execute_token_by_name(s)?,                        
+                            self.execute_token_by_name(s,st)?
                     },
                     Token::Colon(s) => {
                         println!("Colon, starting compiling");
@@ -141,8 +155,9 @@ mod internals {
                     },
                 }
 
-                println!("State of number stack {:?}", self.number_stack);
+                println!("State of number stack {:?}", st.number_stack);
             }
+
             Mode::Compiling(c) => match t {
                 Token::Number(n) => {
                     println!("Compiling number {}", n);
@@ -168,8 +183,26 @@ mod internals {
             },
         }
 
+        Ok(Handled::NotHandled)
+    }
+}
+impl CompiledCommands {
+       fn execute_token_by_name(&mut self, s: &str, st:&mut State) -> Result<(), ForthError> {
+        let tl = self.get_token_list_for_command(s,st)?;
+
+        println!("Executing token list {:?} for {}", tl, s);
+        self.execute_token_vector(tl)?;
         Ok(())
     }
 
+    fn get_token_list_for_command(&self, s: &str, st:&mut State) -> Result<Vec<Token>, ForthError> {
+        let tl = self.command_map.get(s);
+        match tl {
+            Some(tl) => Ok(tl.to_vec()),
+            None => return Err(ForthError::UnknownToken(s.to_owned())),
+        }
     }
+
+ 
+}
 }

@@ -1,9 +1,21 @@
+use super::error::ForthError;
+
 pub struct State {
-    number_stack: NumberStack,
+    pub number_stack: NumberStack,
 }
 
+impl State {
+        pub fn new() -> State {
+State {
+    number_stack: NumberStack::new(),
+    
+}
+    }
+}
+
+#[derive(Debug)]
 pub struct NumberStack {
-    number_stack: Vec<i64>,
+   pub number_stack: Vec<i64>,
 }
 
 impl NumberStack {
@@ -114,5 +126,11 @@ impl NumberStack {
     /// ```    
     pub fn access_stack(&mut self) -> &mut Vec<i64> {
         &mut self.number_stack
+    }
+
+    pub fn new() -> NumberStack {
+        NumberStack {
+            number_stack: Vec::new(),
+        }
     }
 }

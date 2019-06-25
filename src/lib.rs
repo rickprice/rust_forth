@@ -10,9 +10,10 @@ pub mod error;
 mod state;
 mod tokenHandler;
 
-use tokenHandler::HandleToken;
-use tokenHandler::Token;
 use state::State;
+use tokenHandler::HandleToken;
+use tokenHandler::Handled;
+use tokenHandler::Token;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -41,10 +42,9 @@ use state::State;
 /// # }
 /// ```
 pub struct ForthInterpreter {
-    token_handlers : Vec<Box<HandleToken>>,
-    state : State,
+    token_handlers: Vec<Box<HandleToken>>,
+    state: State,
 }
-
 
 impl ForthInterpreter {
     /// This creates a new instance of a Forth Interpreter, it only understands the built in commands.
@@ -52,7 +52,7 @@ impl ForthInterpreter {
     /// In the source code directory there is a file called 'init.forth' that has basic words
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
-            token_handlers:Vec::new(),
+            token_handlers: Vec::new(),
             state: State::new(),
         }
     }
@@ -91,17 +91,9 @@ impl ForthInterpreter {
 
         println!("tokenized string: {:?}", tl);
 
-        self.execute_token_vector(tl,&mut self.state)?;
+        // +++ FIX THIS +++ We need to be able to execute a token vector, maybe grab it from TokenHandler or something
+        //        self.execute_token_vector(tl,&mut self.state)?;
 
-        Ok(())
-    }
-
-   fn execute_token_vector(&mut self, tl: Vec<Token>,st: &mut State) -> Result<(), ForthError> {
-        println!("Interpreting token list {:?}", tl);
-        for t in tl.iter() {
-            println!("Executing token vector {:?}", t);
-            self.execute_token(t)?;
-        }
         Ok(())
     }
 }
@@ -223,11 +215,10 @@ impl ForthInterpreter {
 
 impl ForthInterpreter {
     fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
-
-        for th in self.token_handlers {
-            match th.handle_token(t,&mut self.state) {
-                Handled=>break,
-                UnHandled=>(),
+        for th in self.token_handlers.iter_mut() {
+            match th.handle_token(t, &mut self.state)? {
+                Handled::Handled => break,
+                Handled::NotHandled => (),
             }
         }
 
@@ -262,10 +253,7 @@ impl ForthInterpreter {
             }
         }
     }
-
- 
 }
-
 
 #[cfg(test)]
 mod tests {

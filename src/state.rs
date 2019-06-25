@@ -5,21 +5,20 @@ pub struct State {
 }
 
 impl State {
-        pub fn new() -> State {
-State {
-    number_stack: NumberStack::new(),
-    
-}
+    pub fn new() -> State {
+        State {
+            number_stack: NumberStack::new(),
+        }
     }
 }
 
 #[derive(Debug)]
 pub struct NumberStack {
-   pub number_stack: Vec<i64>,
+    pub number_stack: Vec<i64>,
 }
 
 impl NumberStack {
-   /// This method pushes a number onto the Forth stack
+    /// This method pushes a number onto the Forth stack
     ///
     /// # Arguments
     ///

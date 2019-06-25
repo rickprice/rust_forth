@@ -216,9 +216,8 @@ impl ForthInterpreter {
 impl ForthInterpreter {
     fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
         for th in self.token_handlers.iter_mut() {
-            match th.handle_token(t, &mut self.state)? {
-                Handled::Handled => break,
-                Handled::NotHandled => (),
+            if let Handled::Handled = th.handle_token(t, &mut self.state)? {
+                break;
             }
         }
 

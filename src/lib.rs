@@ -42,7 +42,6 @@ use tokenHandler::HandleToken;
 /// ```
 pub struct ForthInterpreter {
     state: State,
-    token_handlers: Vec<Box<HandleToken>>,
 }
 
 impl ForthInterpreter {
@@ -52,7 +51,6 @@ impl ForthInterpreter {
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
             state: State::new(),
-            token_handlers: Vec::new(),
         }
     }
 

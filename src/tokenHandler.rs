@@ -20,8 +20,8 @@ pub trait HandleToken {
     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError>;
 }
 
-fn execute_token(th: Vec<Box<HandleToken>>,t: &Token, st: &mut State) -> Result<(), ForthError> {
-    for th in th.iter_mut() {
+fn execute_token(t: &Token, st: &mut State) -> Result<(), ForthError> {
+    for th in st.token_handlers.iter_mut() {
         if let Handled::Handled = th.handle_token(t, st)? {
             break;
         }

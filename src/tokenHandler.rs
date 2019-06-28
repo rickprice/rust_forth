@@ -20,12 +20,23 @@ pub trait HandleToken {
     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError>;
 }
 
+fn execute_token(th: Vec<Box<HandleToken>>,t: &Token, st: &mut State) -> Result<(), ForthError> {
+    for th in th.iter_mut() {
+        if let Handled::Handled = th.handle_token(t, st)? {
+            break;
+        }
+    }
+
+    Ok(())
+}
+
 mod internals {
     use super::super::error::ForthError;
     use super::HandleToken;
     use super::Handled;
     use super::State;
     use super::Token;
+    use super::execute_token;
     use std::collections::HashMap;
 
     pub struct ForthInternalCommandHandler {}
@@ -184,7 +195,7 @@ mod internals {
     }
     impl CompiledCommands {
         fn execute_token_by_name(&mut self, s: &str, st: &mut State) -> Result<(), ForthError> {
-            let tl = self.get_token_list_for_command(s, st)?;
+            let tl = self.get_token_list_for_command(s)?;
 
             println!("Executing token list {:?} for {}", tl, s);
             self.execute_token_vector(tl, st)?;
@@ -199,17 +210,12 @@ mod internals {
             println!("Interpreting token list {:?}", tl);
             for t in tl.iter() {
                 println!("Executing token vector {:?}", t);
-                // +++ FIX THIS +++
-                //            self.execute_token(t)?;
+                execute_token(t, st)?;
             }
             Ok(())
         }
 
-        fn get_token_list_for_command(
-            &self,
-            s: &str,
-            st: &mut State,
-        ) -> Result<Vec<Token>, ForthError> {
+        fn get_token_list_for_command(&self, s: &str) -> Result<Vec<Token>, ForthError> {
             let tl = self.command_map.get(s);
             match tl {
                 Some(tl) => Ok(tl.to_vec()),

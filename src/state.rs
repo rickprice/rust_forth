@@ -1,4 +1,5 @@
 use super::error::ForthError;
+use super::tokenHandler::HandleToken;
 
 pub struct State {
     pub number_stack: NumberStack,
@@ -8,6 +9,7 @@ impl State {
     pub fn new() -> State {
         State {
             number_stack: NumberStack::new(),
+            token_handlers: Vec::new(),
         }
     }
 }

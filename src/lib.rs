@@ -11,9 +11,8 @@ mod state;
 mod tokenHandler;
 
 use state::State;
-use tokenHandler::HandleToken;
-use tokenHandler::Handled;
 use tokenHandler::Token;
+use tokenHandler::HandleToken;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -42,8 +41,8 @@ use tokenHandler::Token;
 /// # }
 /// ```
 pub struct ForthInterpreter {
-    token_handlers: Vec<Box<HandleToken>>,
     state: State,
+    token_handlers: Vec<Box<HandleToken>>,
 }
 
 impl ForthInterpreter {
@@ -52,8 +51,8 @@ impl ForthInterpreter {
     /// In the source code directory there is a file called 'init.forth' that has basic words
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
-            token_handlers: Vec::new(),
             state: State::new(),
+            token_handlers: Vec::new(),
         }
     }
 
@@ -214,16 +213,6 @@ impl ForthInterpreter {
 // back to Interpreting mode.
 
 impl ForthInterpreter {
-    fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
-        for th in self.token_handlers.iter_mut() {
-            if let Handled::Handled = th.handle_token(t, &mut self.state)? {
-                break;
-            }
-        }
-
-        Ok(())
-    }
-
     fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthError> {
         let mut tl = Vec::new();
 

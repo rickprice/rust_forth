@@ -4,16 +4,14 @@ use super::tokenHandler::Token;
 
 pub struct State {
     pub number_stack: NumberStack,
-    pub token_stack: TokenStack,
-    pub token_handlers: Vec<Box<HandleToken>>
+    pub token_stack: Vec<Token>,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             number_stack: NumberStack::new(),
-            token_stack: TokenStack::new(),
-            token_handlers: Vec::new(),
+            token_stack: Vec::new(),
         }
     }
 }
@@ -136,19 +134,6 @@ impl NumberStack {
     pub fn new() -> NumberStack {
         NumberStack {
             number_stack: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct TokenStack {
-    pub token_stack: Vec<Token>,
-}
-
-impl TokenStack {
-    pub fn new() ->TokenStack {
-        TokenStack {
-            token_stack: Vec::new(),
         }
     }
 }

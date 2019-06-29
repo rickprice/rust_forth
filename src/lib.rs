@@ -11,8 +11,8 @@ mod state;
 mod tokenHandler;
 
 use state::State;
-use tokenHandler::Token;
 use tokenHandler::HandleToken;
+use tokenHandler::Token;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -42,7 +42,11 @@ use tokenHandler::HandleToken;
 /// ```
 pub struct ForthInterpreter {
     state: State,
+    token_handlers: Vec<Box<HandleToken>>,
 }
+
+/// This method executes Forth commands contained inside the string, these can be commands to be compiled, or interpreted commands
+///}
 
 impl ForthInterpreter {
     /// This creates a new instance of a Forth Interpreter, it only understands the built in commands.
@@ -51,11 +55,10 @@ impl ForthInterpreter {
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
             state: State::new(),
+            token_handlers: Vec::new(),
         }
     }
 
-    /// This method executes Forth commands contained inside the string, these can be commands to be compiled, or interpreted commands
-    ///
     /// # Arguments
     ///
     /// * 'str' - A string slice that contains forth commands to execute (or compile)

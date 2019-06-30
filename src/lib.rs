@@ -8,12 +8,12 @@ pub use error::ForthError;
 
 pub mod error;
 mod state;
-mod tokenHandler;
+mod token_handler;
 
 use state::State;
-use tokenHandler::HandleToken;
-use tokenHandler::Handled;
-use tokenHandler::Token;
+use token_handler::HandleToken;
+use token_handler::Handled;
+use token_handler::Token;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -97,7 +97,7 @@ impl ForthInterpreter {
 
         self.state.token_stack.append(&mut tl);
 
-        self.execute_token_stack();
+        self.execute_token_stack()?;
 
         Ok(())
     }

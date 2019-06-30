@@ -1,5 +1,5 @@
 use super::error::ForthError;
-use super::tokenHandler::Token;
+use super::token_handler::Token;
 
 pub struct State {
     pub number_stack: NumberStack,

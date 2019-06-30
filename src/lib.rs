@@ -97,7 +97,7 @@ impl ForthInterpreter {
 
         self.state.token_stack.append(&mut tl);
 
-        self.execute_token_stack(&mut self.token_handlers, &mut self.state);
+        self.execute_token_stack();
 
         Ok(())
     }
@@ -248,28 +248,19 @@ impl ForthInterpreter {
         }
     }
 
-    fn execute_token_stack(
-        &self,
-        thl: &mut Vec<Box<HandleToken>>,
-        st: &mut State,
-    ) -> Result<(), ForthError> {
+    fn execute_token_stack(&mut self) -> Result<(), ForthError> {
         loop {
-            match st.token_stack.pop() {
-                Some(t) => self.execute_token(thl, &t, st)?,
+            match self.state.token_stack.pop() {
+                Some(t) => self.execute_token(&t)?,
                 None => break,
             }
         }
         Ok(())
     }
 
-    fn execute_token(
-        &self,
-        thl: &mut Vec<Box<HandleToken>>,
-        t: &Token,
-        st: &mut State,
-    ) -> Result<(), ForthError> {
-        for th in thl.iter_mut() {
-            if let Handled::Handled = th.handle_token(t, st)? {
+    fn execute_token(&mut self, t: &Token) -> Result<(), ForthError> {
+        for th in self.token_handlers.iter_mut() {
+            if let Handled::Handled = th.handle_token(t, &mut self.state)? {
                 break;
             }
         }

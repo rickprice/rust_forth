@@ -12,6 +12,7 @@ mod tokenHandler;
 
 use state::State;
 use tokenHandler::HandleToken;
+use tokenHandler::Handled;
 use tokenHandler::Token;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
@@ -87,12 +88,16 @@ impl ForthInterpreter {
     /// ```    
     pub fn execute_string(&mut self, s: &str) -> Result<(), ForthError> {
         println!("Executing string: {}", s);
-        let tl = ForthInterpreter::tokenize_string(s)?;
+        let mut tl = ForthInterpreter::tokenize_string(s)?;
 
         println!("tokenized string: {:?}", tl);
 
-        // +++ FIX THIS +++ We need to be able to execute a token vector, maybe grab it from TokenHandler or something
-        //        self.execute_token_vector(tl,&mut self.state)?;
+        // Because we append, we need the tokens in reverse order so they can be popped in the correct order
+        tl.reverse();
+
+        self.state.token_stack.append(&mut tl);
+
+        self.execute_token_stack(&mut self.token_handlers, &mut self.state);
 
         Ok(())
     }
@@ -241,6 +246,35 @@ impl ForthInterpreter {
                 }
             }
         }
+    }
+
+    fn execute_token_stack(
+        &self,
+        thl: &mut Vec<Box<HandleToken>>,
+        st: &mut State,
+    ) -> Result<(), ForthError> {
+        loop {
+            match st.token_stack.pop() {
+                Some(t) => self.execute_token(thl, &t, st)?,
+                None => break,
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_token(
+        &self,
+        thl: &mut Vec<Box<HandleToken>>,
+        t: &Token,
+        st: &mut State,
+    ) -> Result<(), ForthError> {
+        for th in thl.iter_mut() {
+            if let Handled::Handled = th.handle_token(t, st)? {
+                break;
+            }
+        }
+
+        Ok(())
     }
 }
 

@@ -20,33 +20,8 @@ pub trait HandleToken {
     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError>;
 }
 
-fn execute_token_stack(
-    thl: &mut Vec<Box<HandleToken>>,
-    t: &Token,
-    st: &mut State,
-) -> Result<(), ForthError> {
-    loop {
-        match st.token_stack.pop() {
-            Some(t) => execute_token(thl, &t, st)?,
-            None => break,
-        }
-    }
-    Ok(())
-}
-
-fn execute_token(thl: &mut Vec<Box<HandleToken>>, t: &Token, st: &mut State) -> Result<(), ForthError> {
-    for th in thl.iter_mut() {
-        if let Handled::Handled = th.handle_token(t, st)? {
-            break;
-        }
-    }
-
-    Ok(())
-}
-
 mod internals {
     use super::super::error::ForthError;
-    use super::execute_token;
     use super::HandleToken;
     use super::Handled;
     use super::State;
@@ -166,9 +141,11 @@ mod internals {
                         Token::Command(s) => {
                             println!("Interpreting token {}", s);
 
-                            let mut tl = self.get_token_list_for_command(s)?; // +++ FIX THIS +++ this needs to be reversed
+                            let mut tl = self.get_token_list_for_command(s)?;
+                            // Because we append, we need the tokens in reverse order so they can be popped in the correct order
+                            tl.reverse();
+
                             st.token_stack.append(&mut tl);
-//                            self.execute_token_by_name(s, st)?
                         }
                         Token::Colon(s) => {
                             println!("Colon, starting compiling");

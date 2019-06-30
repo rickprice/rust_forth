@@ -1,5 +1,4 @@
 use super::error::ForthError;
-use super::tokenHandler::HandleToken;
 use super::tokenHandler::Token;
 
 pub struct State {

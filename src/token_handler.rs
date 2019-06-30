@@ -121,6 +121,9 @@ pub mod internals {
 
             Ok(())
         }
+        pub fn new() -> ForthInternalCommandHandler {
+            ForthInternalCommandHandler {}
+        }
     }
     /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
     enum Mode {
@@ -194,6 +197,13 @@ pub mod internals {
             match tl {
                 Some(tl) => Ok(tl.to_vec()),
                 None => return Err(ForthError::UnknownToken(s.to_owned())),
+            }
+        }
+
+        pub fn new() -> CompiledCommands {
+            CompiledCommands {
+                command_map: HashMap::new(),
+                mode: Mode::Interpreting,
             }
         }
     }

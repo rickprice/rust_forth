@@ -14,6 +14,8 @@ use state::State;
 use token_handler::HandleToken;
 use token_handler::Handled;
 use token_handler::Token;
+use token_handler::internals::CompiledCommands;
+use token_handler::internals::ForthInternalCommandHandler;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -56,7 +58,7 @@ impl ForthInterpreter {
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
             state: State::new(),
-            token_handlers: Vec::new(),
+            token_handlers: vec!(CompiledCommands::new(),ForthInternalCommandHandler::new()),
         }
     }
 

@@ -20,7 +20,7 @@ pub trait HandleToken {
     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError>;
 }
 
-mod internals {
+pub mod internals {
     use super::super::error::ForthError;
     use super::HandleToken;
     use super::Handled;

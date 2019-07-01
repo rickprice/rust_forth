@@ -196,7 +196,7 @@ pub mod internals {
                 },
             }
 
-            Ok(Handled::NotHandled)
+            Ok(Handled::Handled)
         }
     }
 

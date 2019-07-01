@@ -144,11 +144,20 @@ pub mod internals {
                         Token::Command(s) => {
                             println!("Interpreting token {}", s);
 
-                            let mut tl = self.get_token_list_for_command(s)?;
-                            // Because we append, we need the tokens in reverse order so they can be popped in the correct order
-                            tl.reverse();
+                            match self.get_token_list_for_command(s) {
+                                Result::Ok(mut tl) => {
+                                    // Because we append, we need the tokens in reverse order so they can be popped in the correct order
+                                    tl.reverse();
 
-                            st.token_stack.append(&mut tl);
+                                    st.token_stack.append(&mut tl);
+
+                                    return Ok(Handled::Handled);
+                                }
+                                Result::Err(ForthError::UnknownToken(_)) => {
+                                    return Ok(Handled::NotHandled)
+                                }
+                                Result::Err(e) => return Err(e),
+                            }
                         }
                         Token::Colon(s) => {
                             println!("Colon, starting compiling");

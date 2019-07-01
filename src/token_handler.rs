@@ -33,7 +33,7 @@ pub mod internals {
     impl HandleToken for ForthInternalCommandHandler {
         fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError> {
             if let Token::Command(s) = t {
-                println!("Interpreting token {}", s);
+                println!("ForthInternalCommandHandler: Interpreting token {}", s);
                 match s.as_ref() {
                     "POP" => st.number_stack.pop_stack().map(|_| Ok(Handled::Handled))?,
                     "ADD" => self.add(st).map(|_| Ok(Handled::Handled))?,
@@ -142,7 +142,7 @@ pub mod internals {
                     match t {
                         Token::Number(n) => st.number_stack.push_stack(*n),
                         Token::Command(s) => {
-                            println!("Interpreting token {}", s);
+                            println!("CompiledCommands: Interpreting token {}", s);
 
                             match self.get_token_list_for_command(s) {
                                 Result::Ok(mut tl) => {

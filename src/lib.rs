@@ -41,6 +41,11 @@ use token_handler::Token;
 ///
 ///    rf.execute_string(": TestCommand 123456 DUP ADD 777 ; TestCommand TestCommand")?;
 ///
+///    assert_eq!(
+///        rf.access_stack(),
+///        &vec![888, 246912, 777, 246912, 777]
+///    );
+///
 /// #
 /// #   Ok(())
 /// # }
@@ -74,8 +79,7 @@ impl ForthInterpreter {
     /// # Example
     ///
     ///
-    /// ```
-    /// # use std::error::Error;
+    /// ``` /// # use std::error::Error;
     /// use rust_forth::ForthInterpreter;
     /// use rust_forth::ForthError;
     /// # use exit::Exit;
@@ -88,6 +92,11 @@ impl ForthInterpreter {
     ///    rf.execute_string("123 321 ADD 2 MUL")?;
     ///
     ///    rf.execute_string(": TestCommand 123456 DUP ADD 777 ; TestCommand TestCommand")?;
+    ///
+    ///    assert_eq!(
+    ///        rf.access_stack(),
+    ///        &vec![888_i64, 246912, 777, 246912, 777]
+    ///    );
     ///
     /// #
     /// #   Ok(())
@@ -137,6 +146,12 @@ impl ForthInterpreter {
     ///
     ///     let n = rf.pop_stack()?;
     ///     println!("Found {} on top of stack",n);
+    ///
+    ///     assert_eq!(
+    ///        rf.access_stack(),
+    ///        &vec![]
+    ///    );
+    ///
     /// #
     /// #   Ok(())
     /// # }
@@ -170,6 +185,12 @@ impl ForthInterpreter {
     ///
     ///     let n = rf.pop_stack()?;
     ///     println!("Found {} on top of stack",n);
+    ///
+    ///     assert_eq!(
+    ///        rf.access_stack(),
+    ///        &vec![]
+    ///    );
+    ///
     /// #
     /// #   Ok(())
     /// # }
@@ -208,6 +229,10 @@ impl ForthInterpreter {
     ///         println!("Found {} (backwards) on stack",n)
     ///     }
     ///
+    ///     assert_eq!(
+    ///        rf.access_stack(),
+    ///        &vec![5_i64, 4, 3, 2, 1, 888]
+    ///    );
     ///
     /// #
     /// #   Ok(())

@@ -21,5 +21,10 @@ fn run() -> Result<(), ForthError> {
 
     rf.execute_string(": RickCommand 123456 DUP ADD 777 ; RickCommand RickCommand")?;
 
+    assert_eq!(
+        rf.access_stack(),
+        &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
+    );
+
     Ok(())
 }

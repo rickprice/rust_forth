@@ -58,7 +58,10 @@ impl ForthInterpreter {
     pub fn new() -> ForthInterpreter {
         ForthInterpreter {
             state: State::new(),
-            token_handlers: vec![box::new(CompiledCommands::new()), ForthInternalCommandHandler::new()],
+            token_handlers: vec![
+                Box::new(CompiledCommands::new()),
+                Box::new(ForthInternalCommandHandler::new()),
+            ],
         }
     }
 

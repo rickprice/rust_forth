@@ -50,6 +50,98 @@ use token_handler::internals::ForthInternalCommandHandler;
 /// #   Ok(())
 /// # }
 /// ```
+///
+/// You can implement your own command handlers to do things that the main
+/// Forth interpreter couldn't know you would need to do, and that can't be done
+/// in the Forth like language that it interprets.
+///
+///
+/// ```
+/// # use std::error::Error;
+/// use rust_forth::ForthError;
+/// use rust_forth::ForthInterpreter;
+/// use rust_forth::HandleToken;
+/// use rust_forth::Handled;
+/// use rust_forth::State;
+/// use rust_forth::Token;
+/// use std::fs;
+/// # use exit::Exit;
+/// #
+/// #   fn main() -> Result<(), ForthError> {
+/// #
+///
+///    let mut rf = ForthInterpreter::new();
+///
+///    let startup = fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
+///    rf.execute_string(&startup)?;
+///
+///    rf.execute_string("123 321 ADD 2 MUL")?;
+///
+///    rf.execute_string(": TestCommand 123456 DUP ADD 777 ; TestCommand TestCommand")?;
+///
+///    assert_eq!(
+///        rf.access_stack(),
+///        &vec![888, 246912, 777, 246912, 777]
+///    );
+///
+///     rf.token_handlers
+///        .push(Box::new(ExternalCommandHandler::new()));
+///
+///    rf.execute_string("1111 123456 OUT 123456 IN")?;
+///
+///    assert_eq!(
+///        rf.access_stack(),
+///        &vec![888_i64, 246912, 777, 246912, 777, 777]
+///    );
+///
+/// #
+/// #   Ok(())
+/// # }
+///
+/// pub struct ExternalCommandHandler {}
+///
+/// impl HandleToken for ExternalCommandHandler {
+///     fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError> {
+///         if let Token::Command(s) = t {
+///             println!("ExternalCommandHandler: Interpreting token {}", s);
+///             match s.as_ref() {
+///                 "OUT" => self.out_port(st).map(|_| Ok(Handled::Handled))?,
+///                 "IN" => self.in_port(st).map(|_| Ok(Handled::Handled))?,
+///                 _ => Ok(Handled::NotHandled),
+///             }
+///         } else {
+///             Ok(Handled::NotHandled)
+///         }
+///     }
+/// }
+///
+/// impl ExternalCommandHandler {
+///     fn out_port(&self, st: &mut State) -> Result<(), ForthError> {
+///         let port = st.number_stack.pop_stack()?;
+///         let value = st.number_stack.pop_stack()?;
+///
+///         println!("Sending {} to port {}", value, port);
+///
+///         Ok(())
+///     }
+///
+///     fn in_port(&self, st: &mut State) -> Result<(), ForthError> {
+///         let port = st.number_stack.pop_stack()?;
+///         let value = 777;
+///
+///         st.number_stack.push_stack(value);
+///
+///         println!("Receiving {} from port {}", value, port);
+///
+///         Ok(())
+///     }
+///
+///     pub fn new() -> ExternalCommandHandler {
+///         ExternalCommandHandler {}
+///     }
+/// }
+///
+/// ```
 pub struct ForthInterpreter {
     state: State,
     pub token_handlers: Vec<Box<HandleToken>>,

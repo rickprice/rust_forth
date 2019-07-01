@@ -24,7 +24,9 @@ use token_handler::Token;
 ///
 /// ```
 /// # use std::error::Error;
+/// use rust_forth::ForthInterpreter;
 /// use rust_forth::ForthError;
+/// use std::fs;
 /// # use exit::Exit;
 /// #
 /// #   fn main() -> Result<(), ForthError> {

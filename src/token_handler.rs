@@ -121,6 +121,7 @@ pub mod internals {
 
             Ok(())
         }
+
         pub fn new() -> ForthInternalCommandHandler {
             ForthInternalCommandHandler {}
         }

@@ -5,17 +5,17 @@
 //!
 
 pub use error::ForthError;
+pub use state::State;
+pub use token_handler::HandleToken;
+pub use token_handler::Handled;
+pub use token_handler::Token;
 
 pub mod error;
 mod state;
 mod token_handler;
 
-use state::State;
 use token_handler::internals::CompiledCommands;
 use token_handler::internals::ForthInternalCommandHandler;
-use token_handler::HandleToken;
-use token_handler::Handled;
-use token_handler::Token;
 
 /// This Struct holds all the information the Forth Interpreter needs to run.
 /// If you want to run more than one Forth interpreter, then create another copy
@@ -52,7 +52,7 @@ use token_handler::Token;
 /// ```
 pub struct ForthInterpreter {
     state: State,
-    token_handlers: Vec<Box<HandleToken>>,
+    pub token_handlers: Vec<Box<HandleToken>>,
 }
 
 /// This method executes Forth commands contained inside the string, these can be commands to be compiled, or interpreted commands

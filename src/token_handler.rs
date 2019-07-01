@@ -58,8 +58,6 @@ pub mod internals {
 
             st.number_stack.push_stack(result);
 
-            println!("Multiplied {} by {} resulting in {}", x, y, result);
-
             Ok(())
         }
 
@@ -69,8 +67,6 @@ pub mod internals {
             let result = x / y;
 
             st.number_stack.push_stack(result);
-
-            println!("Divided {} by {} resulting in {}", x, y, result);
 
             Ok(())
         }
@@ -82,8 +78,6 @@ pub mod internals {
 
             st.number_stack.push_stack(result);
 
-            println!("Added {} to {} resulting in {}", x, y, result);
-
             Ok(())
         }
 
@@ -94,8 +88,6 @@ pub mod internals {
 
             st.number_stack.push_stack(result);
 
-            println!("Subtracted {} by {} resulting in {}", x, y, result);
-
             Ok(())
         }
 
@@ -104,8 +96,6 @@ pub mod internals {
 
             st.number_stack.push_stack(x);
             st.number_stack.push_stack(x);
-
-            println!("Duplicated {} ", x);
 
             Ok(())
         }
@@ -116,8 +106,6 @@ pub mod internals {
 
             st.number_stack.push_stack(x);
             st.number_stack.push_stack(y);
-
-            println!("Swapped top items on stack {} {}", x, y);
 
             Ok(())
         }

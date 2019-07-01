@@ -52,7 +52,6 @@ impl NumberStack {
     /// # }
     /// ```    
     pub fn push_stack(&mut self, n: i64) {
-        println!("Pushed {} on stack", n);
         self.number_stack.push(n);
     }
 
@@ -85,7 +84,6 @@ impl NumberStack {
     /// # }
     /// ```    
     pub fn pop_stack(&mut self) -> Result<i64, ForthError> {
-        println!("Popped stack");
         match self.number_stack.pop() {
             Some(x) => Ok(x),
             None => Err(ForthError::PopOfEmptyStack),

@@ -114,6 +114,7 @@ pub mod internals {
             ForthInternalCommandHandler {}
         }
     }
+
     /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
     enum Mode {
         Interpreting,
@@ -205,4 +206,35 @@ pub mod internals {
             }
         }
     }
+
+   /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
+    enum IfThenMode {
+        Interpreting,
+        Skipping,
+    }
+    pub struct IfThenCommands {
+       mode: IfThenMode,
+       deferral: u16,
+    }
+
+    impl HandleToken for IfThenCommands {
+        fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError> {
+            match &self.mode {
+                IfThenMode::Interpreting => {},
+                IfThenMode::Skipping => {},
+           }
+
+            Ok(Handled::Handled)
+        }
+    }
+
+    impl IfThenCommands {
+
+        pub fn new() -> IfThenCommands {
+            IfThenCommands {
+                mode: IfThenMode::Interpreting,
+                deferral: 0,
+            }
+        }
+    }    
 }

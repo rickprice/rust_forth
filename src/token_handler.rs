@@ -207,34 +207,55 @@ pub mod internals {
         }
     }
 
-   /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
+    /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
     enum IfThenMode {
         Interpreting,
         Skipping,
     }
     pub struct IfThenCommands {
-       mode: IfThenMode,
-       deferral: u16,
+        mode: IfThenMode,
+        deferral: u16,
     }
 
     impl HandleToken for IfThenCommands {
         fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError> {
             match &self.mode {
-                IfThenMode::Interpreting => {},
-                IfThenMode::Skipping => {},
-           }
+                // IF ELSE THEN
+                IfThenMode::Interpreting => match t {
+                    Token::Command(s) => match s.as_ref() {
+                        "IF" => {
+                            if let 0 = st.number_stack.pop_stack()? {
+                                self.mode = IfThenMode::Skipping
+                            }
+                        }
+                        "ELSE" => self.mode = IfThenMode::Skipping,
+                        "THEN" => return Ok(Handled::Handled),
+                        _ => return Ok(Handled::NotHandled),
+                    },
+                    _ => return Ok(Handled::NotHandled),
+                },
+                IfThenMode::Skipping => match t {
+                    Token::Command(s) => match s.as_ref() {
+                        "IF" => self.deferral += 1,
+                        "ELSE" if self.deferral == 0 => self.mode = IfThenMode::Interpreting,
+                        "THEN" if self.deferral != 0 => self.deferral -= 1,
+                        "THEN" if self.deferral == 0 => self.mode = IfThenMode::Interpreting,
+                        _ => return Ok(Handled::Handled), // We eat commands until we are out of skipping mode
+                    },
+                    _ => return Ok(Handled::NotHandled),
+                },
+            }
 
             Ok(Handled::Handled)
         }
     }
 
     impl IfThenCommands {
-
         pub fn new() -> IfThenCommands {
             IfThenCommands {
                 mode: IfThenMode::Interpreting,
                 deferral: 0,
             }
         }
-    }    
+    }
 }

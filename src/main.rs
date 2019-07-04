@@ -41,6 +41,15 @@ fn run() -> Result<(), ForthError> {
         &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777, 777]
     );
 
+    rf.push_stack(123);
+    rf.push_stack(321);
+    rf.push_stack(0);
+    rf.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN")
+        .unwrap();
+    let n = rf.pop_stack().unwrap();
+
+    assert_eq!(n, 888);
+
     Ok(())
 }
 

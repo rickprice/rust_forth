@@ -242,7 +242,7 @@ pub mod internals {
                         "THEN" if self.deferral == 0 => self.mode = IfThenMode::Interpreting,
                         _ => return Ok(Handled::Handled), // We eat commands until we are out of skipping mode
                     },
-                    _ => return Ok(Handled::NotHandled),
+                    _ => return Ok(Handled::Handled), // We eat *whatever* until we are out of skipping mode
                 },
             }
 
@@ -257,5 +257,39 @@ pub mod internals {
                 deferral: 0,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::*;
+    use super::*;
+
+    #[test]
+    fn test_if_statement_if_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.push_stack(1);
+        rf.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 888);
+    }
+
+    #[test]
+    fn test_if_statement_else_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.push_stack(0);
+        rf.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 1332);
     }
 }

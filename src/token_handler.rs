@@ -263,7 +263,6 @@ pub mod internals {
 #[cfg(test)]
 mod tests {
     use super::super::*;
-    use super::*;
 
     #[test]
     fn test_if_statement_if_part() {
@@ -291,5 +290,69 @@ mod tests {
         let n = rf.pop_stack().unwrap();
 
         assert_eq!(n, 1332);
+    }
+
+    #[test]
+    fn test_compound_if_statement_if_if_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("1 IF 2 IF ADD 3 MUL THEN ELSE ADD 4 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 1332);
+    }
+
+    #[test]
+    fn test_compound_if_statement_then_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("0 IF 2 IF ADD 3 MUL THEN ELSE ADD 4 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 1776);
+    }
+    #[test]
+    fn test_compound_if_statement_no_match() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("1 IF 0 IF ADD 3 MUL THEN ELSE ADD 4 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 321);
+    }
+
+    #[test]
+    fn test_compound_if_statement_then_if_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("0 IF 2 IF ADD 3 MUL THEN ELSE 1 IF ADD 4 MUL ELSE ADD 5 MUL THEN THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 1776);
+    }
+
+    #[test]
+    fn test_compound_if_statement_then_then_part() {
+        let mut rf = ForthInterpreter::new();
+
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.execute_string("0 IF 2 IF ADD 3 MUL THEN ELSE 0 IF ADD 4 MUL ELSE ADD 5 MUL THEN THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
+
+        assert_eq!(n, 2220);
     }
 }

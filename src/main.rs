@@ -8,7 +8,7 @@ use rust_forth::Token;
 use std::fs;
 
 fn main() -> Exit<ForthError> {
-    println!("Hello, world!");
+    println!("Hello, world! This is rust_forth");
 
     run()?;
 

@@ -35,7 +35,7 @@ use token_handler::internals::IfThenCommands;
 ///
 ///    let mut rf = ForthInterpreter::new();
 ///
-///    let startup = fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
+///    let startup = fs::read_to_string("init.forth")?;
 ///    rf.execute_string(&startup)?;
 ///
 ///    rf.execute_string("123 321 ADD 2 MUL")?;
@@ -73,7 +73,7 @@ use token_handler::internals::IfThenCommands;
 ///
 ///    let mut rf = ForthInterpreter::new();
 ///
-///    let startup = fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
+///    let startup = fs::read_to_string("init.forth")?;
 ///    rf.execute_string(&startup)?;
 ///
 ///    rf.execute_string("123 321 ADD 2 MUL")?;
@@ -145,7 +145,7 @@ use token_handler::internals::IfThenCommands;
 /// ```
 pub struct ForthInterpreter {
     state: State,
-    pub token_handlers: Vec<Box<HandleToken>>,
+    pub token_handlers: Vec<Box<dyn HandleToken>>,
 }
 
 /// This method executes Forth commands contained inside the string, these can be commands to be compiled, or interpreted commands

@@ -19,7 +19,7 @@ fn run() -> Result<(), ForthError> {
     let mut rf = ForthInterpreter::new();
 
     let startup =
-        fs::read_to_string("C:\\Users\\rprice\\Documents\\RustProjects\\rust_forth\\init.forth")?;
+        fs::read_to_string("init.forth")?;
     rf.execute_string(&startup)?;
 
     rf.execute_string("predefined1 123 predefined2 456 POP Numbers MUL ADD DUP")?;
@@ -48,7 +48,7 @@ fn run() -> Result<(), ForthError> {
         .unwrap();
     let n = rf.pop_stack().unwrap();
 
-    assert_eq!(n, 888);
+    assert_eq!(n, 1332);
 
     Ok(())
 }

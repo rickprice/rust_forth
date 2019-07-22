@@ -13,6 +13,9 @@ pub use token_handler::Token;
 pub mod error;
 mod state;
 mod token_handler;
+mod stack_machine;
+
+mod token_lexer;
 
 use token_handler::internals::CompiledCommands;
 use token_handler::internals::ForthInternalCommandHandler;
@@ -336,13 +339,6 @@ impl ForthInterpreter {
         &mut self.state.number_stack.number_stack
     }
 }
-
-// This function has two modes, Interpreting, and Compiling.
-// In the Interpreting mode, each token is executed as a command
-// and if the colon is encountered, Compiling mode is entered.
-// In Compiling mode, the tokens are added to the map of commands
-// until a semicolon is encountered, at which point things switch
-// back to Interpreting mode.
 
 impl ForthInterpreter {
     fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthError> {

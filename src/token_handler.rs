@@ -13,6 +13,8 @@ pub enum Token {
     Command(String),
     Colon(String),
     SemiColon,
+    End,
+    Error(String),
 }
 
 // Chain of Command Pattern
@@ -125,6 +127,12 @@ pub mod internals {
         mode: Mode,
     }
 
+// This function has two modes, Interpreting, and Compiling.
+// In the Interpreting mode, each token is executed as a command
+// and if the colon is encountered, Compiling mode is entered.
+// In Compiling mode, the tokens are added to the map of commands
+// until a semicolon is encountered, at which point things switch
+// back to Interpreting mode.
     impl HandleToken for CompiledCommands {
         fn handle_token(&mut self, t: &Token, st: &mut State) -> Result<Handled, ForthError> {
             match &self.mode {

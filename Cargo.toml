@@ -7,4 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-exit = "0.1.0"
+exit = "0.2.0"
+logos = "0.9.7"

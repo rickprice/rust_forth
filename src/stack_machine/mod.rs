@@ -132,6 +132,68 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_execute_ldi() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2]);
+    }
+
+    #[test]
+    fn test_execute_pop() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::POP,
+            Opcode::LDI(2),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 2]);
+    }
+
+    #[test]
+    fn test_execute_swap() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::SWAP,
+            Opcode::LDI(2),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 0, 2]);
+    }
+
+    #[test]
     fn test_execute_add() {
         let mut sm = StackMachine::new();
 

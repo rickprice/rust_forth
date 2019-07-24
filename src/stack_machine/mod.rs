@@ -67,7 +67,7 @@ impl StackMachine {
 
         loop {
             match self.st.opcodes[self.st.pc] {
-                Opcode::JMP => self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?,
+                Opcode::JMP => self.st.pc = self.st.number_stack.pop().map(|x| x as usize)? - 1,
                 Opcode::JR => self.st.pc += self.st.number_stack.pop().map(|x| x as usize)?,
                 Opcode::CALL => {
                     self.st.return_stack.push(self.st.pc + 1);
@@ -75,8 +75,9 @@ impl StackMachine {
                 }
                 Opcode::JRZ => {
                     let x = self.st.number_stack.pop()?;
+                    let offset = self.st.number_stack.pop().map(|x| x as usize)?;
                     if x == 0 {
-                        self.st.pc += self.st.number_stack.pop().map(|x| x as usize)?;
+                        self.st.pc += offset;
                     }
                 }
                 Opcode::LDI(x) => self.st.number_stack.push(x),
@@ -130,6 +131,63 @@ impl StackMachine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_execute_jr() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::LDI(1), // Jump to location 6 with the JR statement, relative jump of 1
+            Opcode::JR,
+            Opcode::LDI(3),
+            Opcode::LDI(4),
+            Opcode::LDI(5),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2, 4, 5]);
+    }
+
+    #[test]
+    fn test_execute_jrz() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::LDI(1), // TOS for JRZ
+            Opcode::LDI(1), // This won't happen because TOS won't be zero...
+            Opcode::JRZ,
+            Opcode::LDI(3),
+            Opcode::LDI(4),
+            Opcode::LDI(5),
+            Opcode::LDI(1), // Relative Jump of 1
+            Opcode::LDI(0),
+            Opcode::JRZ, // Jump over the LDI(6)
+            Opcode::LDI(6),
+            Opcode::LDI(7),
+            Opcode::LDI(8),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2, 3, 4, 5, 7, 8]);
+    }
 
     #[test]
     fn test_execute_ldi() {

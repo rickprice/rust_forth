@@ -11,11 +11,9 @@ pub use token_handler::Handled;
 pub use token_handler::Token;
 
 pub mod error;
+mod stack_machine;
 mod state;
 mod token_handler;
-mod stack_machine;
-
-mod token_lexer;
 
 use token_handler::internals::CompiledCommands;
 use token_handler::internals::ForthInternalCommandHandler;

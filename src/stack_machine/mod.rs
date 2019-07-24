@@ -126,3 +126,68 @@ impl StackMachine {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_execute_add() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 321]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::ADD, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![444]);
+    }
+
+    #[test]
+    fn test_execute_sub() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 444]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::SUB, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![123]);
+    }
+
+    #[test]
+    fn test_execute_mul() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 123]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::MUL, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![39483]);
+    }
+
+    #[test]
+    fn test_execute_div() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::DIV, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![123]);
+    }
+}

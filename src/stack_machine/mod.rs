@@ -229,6 +229,39 @@ mod tests {
     }
 
     #[test]
+    fn test_execute_jrz_backward() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::RET,
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::LDI(-2), // TOS for JRZ
+            Opcode::LDI(1),  // This won't happen because TOS won't be zero...
+            Opcode::JRZ,
+            Opcode::LDI(3),
+            Opcode::LDI(4),
+            Opcode::LDI(5),
+            Opcode::LDI(-12), // Relative Jump to start of code
+            Opcode::LDI(0),
+            Opcode::JRZ, // Jump over the LDI(6)
+            Opcode::LDI(6),
+            Opcode::LDI(7),
+            Opcode::LDI(8),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(2);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
+    }
+
+    #[test]
     fn test_execute_ldi() {
         let mut sm = StackMachine::new();
 

@@ -11,7 +11,7 @@ pub use token_handler::Handled;
 pub use token_handler::Token;
 
 pub mod error;
-mod stack_machine;
+pub mod stack_machine;
 mod state;
 mod token_handler;
 

@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 pub enum TrapHandled {
     Handled,
     NotHandled,
@@ -28,6 +30,7 @@ pub enum Opcode {
     SUB,
     MUL,
     DIV,
+    DEC,
     TRAP,
 }
 
@@ -64,20 +67,29 @@ impl StackMachine {
 
     pub fn execute(&mut self, starting_point: usize) -> Option<StackMachineError> {
         self.st.pc = starting_point;
-
         loop {
+            let mut pc_reset = false;
             match self.st.opcodes[self.st.pc] {
-                Opcode::JMP => self.st.pc = self.st.number_stack.pop().map(|x| x as usize)? - 1,
-                Opcode::JR => self.st.pc += self.st.number_stack.pop().map(|x| x as usize)?,
+                Opcode::JMP => {
+                    self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?;
+                    pc_reset = true;
+                }
+                Opcode::JR => {
+                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
+                    self.st.pc = usize::try_from(new_offset).unwrap();
+                    pc_reset = true;
+                }
                 Opcode::CALL => {
                     self.st.return_stack.push(self.st.pc + 1);
                     self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?;
+                    pc_reset = true;
                 }
                 Opcode::JRZ => {
                     let x = self.st.number_stack.pop()?;
-                    let offset = self.st.number_stack.pop().map(|x| x as usize)?;
+                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
                     if x == 0 {
-                        self.st.pc += offset;
+                        self.st.pc = usize::try_from(new_offset).unwrap();
+                        pc_reset = true;
                     }
                 }
                 Opcode::LDI(x) => self.st.number_stack.push(x),
@@ -103,6 +115,10 @@ impl StackMachine {
                     let y = self.st.number_stack.pop()?;
                     self.st.number_stack.push(x * y);
                 }
+                Opcode::DEC => {
+                    let x = self.st.number_stack.pop()?;
+                    self.st.number_stack.push(x - 1);
+                }
                 Opcode::DIV => {
                     let x = self.st.number_stack.pop()?;
                     let y = self.st.number_stack.pop()?;
@@ -122,8 +138,9 @@ impl StackMachine {
                     }
                 }
             };
-            // +++ FIX THIS +++ This needs to be modified for jumps and calls, or at least they need to be modified
-            self.st.pc += 1;
+            if pc_reset == false {
+                self.st.pc += 1;
+            }
         }
     }
 }
@@ -133,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_execute_jr() {
+    fn test_execute_jr_forward() {
         let mut sm = StackMachine::new();
 
         // Populate the number stack
@@ -143,7 +160,7 @@ mod tests {
             Opcode::LDI(0),
             Opcode::LDI(1),
             Opcode::LDI(2),
-            Opcode::LDI(1), // Jump to location 6 with the JR statement, relative jump of 1
+            Opcode::LDI(2), // Jump to location 6 with the JR statement, relative jump of 1
             Opcode::JR,
             Opcode::LDI(3),
             Opcode::LDI(4),
@@ -158,7 +175,29 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_jrz() {
+    fn test_execute_jr_backward() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::RET,
+            Opcode::LDI(2),
+            Opcode::LDI(-5), // Jump to the LDI(0)
+            Opcode::JR,
+        ]);
+
+        // Execute the instructions
+        sm.execute(3);
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 2, 0, 1]);
+    }
+
+    #[test]
+    fn test_execute_jrz_forward() {
         let mut sm = StackMachine::new();
 
         // Populate the number stack
@@ -168,13 +207,13 @@ mod tests {
             Opcode::LDI(0),
             Opcode::LDI(1),
             Opcode::LDI(2),
-            Opcode::LDI(1), // TOS for JRZ
+            Opcode::LDI(2), // TOS for JRZ
             Opcode::LDI(1), // This won't happen because TOS won't be zero...
             Opcode::JRZ,
             Opcode::LDI(3),
             Opcode::LDI(4),
             Opcode::LDI(5),
-            Opcode::LDI(1), // Relative Jump of 1
+            Opcode::LDI(2), // Relative Jump of 1
             Opcode::LDI(0),
             Opcode::JRZ, // Jump over the LDI(6)
             Opcode::LDI(6),

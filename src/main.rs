@@ -1,4 +1,6 @@
 use exit::Exit;
+use rust_forth::stack_machine::Opcode;
+use rust_forth::stack_machine::StackMachine;
 use rust_forth::ForthError;
 use rust_forth::ForthInterpreter;
 use rust_forth::HandleToken;
@@ -16,6 +18,25 @@ fn main() -> Exit<ForthError> {
 }
 
 fn run() -> Result<(), ForthError> {
+    let mut sm = StackMachine::new();
+
+    // Populate the number stack
+    sm.st.number_stack.extend_from_slice(&[321, 39483]);
+    // Put the opcodes into the *memory*
+    sm.st.opcodes.extend_from_slice(&[
+        Opcode::LDI(0),
+        Opcode::LDI(1),
+        Opcode::RET,
+        Opcode::LDI(2),
+        Opcode::LDI(-5), // Jump to the LDI(0)
+        Opcode::JR,
+    ]);
+
+    // Execute the instructions
+    sm.execute(3);
+
+    assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 0]);
+
     let mut rf = ForthInterpreter::new();
 
     let startup = fs::read_to_string("init.forth")?;

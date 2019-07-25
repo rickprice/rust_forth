@@ -30,7 +30,7 @@ pub enum Opcode {
     SUB,
     MUL,
     DIV,
-    DEC,
+    DUP,
     TRAP,
 }
 
@@ -96,10 +96,13 @@ impl StackMachine {
                 Opcode::POP => {
                     let _ = self.st.number_stack.pop()?;
                 }
-                Opcode::RET => match self.st.return_stack.pop() {
-                    None => return None,
-                    Some(oldpc) => self.st.pc = oldpc,
-                },
+                Opcode::RET => {
+                    match self.st.return_stack.pop() {
+                        None => return None,
+                        Some(oldpc) => self.st.pc = oldpc,
+                    };
+                    pc_reset = true;
+                }
                 Opcode::ADD => {
                     let x = self.st.number_stack.pop()?;
                     let y = self.st.number_stack.pop()?;
@@ -115,14 +118,15 @@ impl StackMachine {
                     let y = self.st.number_stack.pop()?;
                     self.st.number_stack.push(x * y);
                 }
-                Opcode::DEC => {
-                    let x = self.st.number_stack.pop()?;
-                    self.st.number_stack.push(x - 1);
-                }
                 Opcode::DIV => {
                     let x = self.st.number_stack.pop()?;
                     let y = self.st.number_stack.pop()?;
                     self.st.number_stack.push(x / y);
+                }
+                Opcode::DUP => {
+                    let x = self.st.number_stack.pop()?;
+                    self.st.number_stack.push(x);
+                    self.st.number_stack.push(x);
                 }
                 Opcode::SWAP => {
                     let x = self.st.number_stack.pop()?;
@@ -262,6 +266,51 @@ mod tests {
     }
 
     #[test]
+    fn test_execute_call() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(5),
+            Opcode::CALL,
+            Opcode::LDI(1),
+            Opcode::RET,
+            Opcode::LDI(2),
+            Opcode::LDI(10),
+            Opcode::CALL,
+            Opcode::LDI(3),
+            Opcode::RET,
+            Opcode::LDI(4),
+            Opcode::LDI(15),
+            Opcode::CALL,
+            Opcode::LDI(5),
+            Opcode::RET,
+            Opcode::LDI(6),
+            Opcode::LDI(20),
+            Opcode::CALL,
+            Opcode::LDI(7),
+            Opcode::RET,
+            Opcode::LDI(8),
+            Opcode::LDI(25),
+            Opcode::CALL,
+            Opcode::LDI(9),
+            Opcode::RET,
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(
+            sm.st.number_stack,
+            vec![321, 39483, 0, 2, 4, 6, 8, 9, 7, 5, 3, 1]
+        );
+    }
+
+    #[test]
     fn test_execute_ldi() {
         let mut sm = StackMachine::new();
 
@@ -381,5 +430,20 @@ mod tests {
         sm.execute(0);
 
         assert_eq!(sm.st.number_stack, vec![123]);
+    }
+
+    #[test]
+    fn test_execute_dup() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::DUP, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0);
+
+        assert_eq!(sm.st.number_stack, vec![123, 39483, 39483]);
     }
 }

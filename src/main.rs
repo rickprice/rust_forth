@@ -25,17 +25,37 @@ fn run() -> Result<(), ForthError> {
     // Put the opcodes into the *memory*
     sm.st.opcodes.extend_from_slice(&[
         Opcode::LDI(0),
+        Opcode::LDI(5),
+        Opcode::CALL,
         Opcode::LDI(1),
         Opcode::RET,
         Opcode::LDI(2),
-        Opcode::LDI(-5), // Jump to the LDI(0)
-        Opcode::JR,
+        Opcode::LDI(10),
+        Opcode::CALL,
+        Opcode::LDI(3),
+        Opcode::RET,
+        Opcode::LDI(4),
+        Opcode::LDI(15),
+        Opcode::CALL,
+        Opcode::LDI(5),
+        Opcode::RET,
+        Opcode::LDI(6),
+        Opcode::LDI(20),
+        Opcode::CALL,
+        Opcode::LDI(7),
+        Opcode::RET,
+        Opcode::LDI(8),
+        Opcode::LDI(25),
+        Opcode::CALL,
+        Opcode::LDI(9),
+        Opcode::RET,
+        Opcode::RET,
     ]);
 
     // Execute the instructions
-    sm.execute(3);
+    sm.execute(0);
 
-    assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 0]);
+    assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
 
     let mut rf = ForthInterpreter::new();
 

@@ -11,6 +11,7 @@ pub enum TrapHandled {
     NotHandled,
 }
 
+#[derive(Debug)]
 pub enum StackMachineError {
     UnkownError,
     NoneError,
@@ -24,7 +25,6 @@ impl From<option::NoneError> for StackMachineError {
         StackMachineError::NoneError
     }
 }
-
 
 // Chain of Command Pattern
 pub trait HandleTrap {
@@ -205,7 +205,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2, 4, 5]);
     }
@@ -227,7 +227,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(3);
+        sm.execute(3, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 2, 0, 1]);
     }
@@ -259,7 +259,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2, 3, 4, 5, 7, 8]);
     }
@@ -292,7 +292,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(2);
+        sm.execute(2, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
     }
@@ -334,7 +334,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(
             sm.st.number_stack,
@@ -357,7 +357,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2]);
     }
@@ -378,7 +378,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 2]);
     }
@@ -399,7 +399,7 @@ mod tests {
         ]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 0, 2]);
     }
@@ -414,7 +414,7 @@ mod tests {
         sm.st.opcodes.extend_from_slice(&[Opcode::ADD, Opcode::RET]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![444]);
     }
@@ -429,7 +429,7 @@ mod tests {
         sm.st.opcodes.extend_from_slice(&[Opcode::SUB, Opcode::RET]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![123]);
     }
@@ -444,7 +444,7 @@ mod tests {
         sm.st.opcodes.extend_from_slice(&[Opcode::MUL, Opcode::RET]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![39483]);
     }
@@ -459,7 +459,7 @@ mod tests {
         sm.st.opcodes.extend_from_slice(&[Opcode::DIV, Opcode::RET]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![123]);
     }
@@ -474,8 +474,54 @@ mod tests {
         sm.st.opcodes.extend_from_slice(&[Opcode::DUP, Opcode::RET]);
 
         // Execute the instructions
-        sm.execute(0);
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![123, 39483, 39483]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_execute_run_out_of_gas() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(5),
+            Opcode::CALL,
+            Opcode::LDI(1),
+            Opcode::RET,
+            Opcode::LDI(2),
+            Opcode::LDI(10),
+            Opcode::CALL,
+            Opcode::LDI(3),
+            Opcode::RET,
+            Opcode::LDI(4),
+            Opcode::LDI(15),
+            Opcode::CALL,
+            Opcode::LDI(5),
+            Opcode::RET,
+            Opcode::LDI(6),
+            Opcode::LDI(20),
+            Opcode::CALL,
+            Opcode::LDI(7),
+            Opcode::RET,
+            Opcode::LDI(8),
+            Opcode::LDI(25),
+            Opcode::CALL,
+            Opcode::LDI(9),
+            Opcode::RET,
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(10)).unwrap();
+
+        assert_eq!(
+            sm.st.number_stack,
+            vec![321, 39483, 0, 2, 4, 6, 8, 9, 7, 5, 3, 1]
+        );
     }
 }

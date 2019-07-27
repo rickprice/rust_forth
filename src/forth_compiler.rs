@@ -1,4 +1,5 @@
 use super::error::ForthError;
+use super::stack_machine::GasLimit;
 use super::stack_machine::Opcode;
 use super::stack_machine::StackMachine;
 use std::collections::HashMap;
@@ -58,7 +59,7 @@ enum Mode {
 }
 
 impl ForthCompiler {
-    fn tokenize_string(s: &str) -> Result<Vec<Token>, ForthError> {
+    fn tokenize_string(&self, s: &str) -> Result<Vec<Token>, ForthError> {
         let mut tv = Vec::new();
 
         let mut string_iter = s.split_whitespace();
@@ -126,9 +127,21 @@ impl ForthCompiler {
         return Ok(tv);
     }
 
-    fn execute_token_vector(&mut self, token_vector: &Vec<Token>) -> Result<(), ForthError> {
-        let ol = self.compile_token_vector(token_vector)?;
+    fn execute_token_vector(
+        &mut self,
+        token_vector: &Vec<Token>,
+        gas_limit: GasLimit,
+    ) -> Result<(), ForthError> {
+        let mut ol = self.compile_token_vector(token_vector)?;
         self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
+        self.sm.st.opcodes.append(&mut ol);
+        self.sm.execute(self.last_function, gas_limit)?;
+        Ok(())
+    }
+
+    pub fn execute_string(&mut self, s: &str, gas_limit: GasLimit) -> Result<(), ForthError> {
+        let tv = self.tokenize_string(s)?;
+        self.execute_token_vector(&tv, gas_limit)?;
         Ok(())
     }
 }

@@ -1,4 +1,10 @@
 use std::convert::TryFrom;
+use std::option;
+
+pub enum GasLimit {
+    Unlimited,
+    Limited(u64),
+}
 
 pub enum TrapHandled {
     Handled,
@@ -7,8 +13,18 @@ pub enum TrapHandled {
 
 pub enum StackMachineError {
     UnkownError,
+    NoneError,
     NumberStackUnderflow,
+    RanOutOfGas,
 }
+
+/// Helper to convert a Some/None return to a ForthError error code.
+impl From<option::NoneError> for StackMachineError {
+    fn from(_: option::NoneError) -> Self {
+        StackMachineError::NoneError
+    }
+}
+
 
 // Chain of Command Pattern
 pub trait HandleTrap {
@@ -16,7 +32,6 @@ pub trait HandleTrap {
         -> Result<TrapHandled, StackMachineError>;
 }
 
-    fn from(_: option::NoneError) -> Self {
 #[derive(Debug, Clone)]
 pub enum Opcode {
     JMP,
@@ -41,6 +56,7 @@ pub struct StackMachineState {
     return_stack: Vec<usize>,
     pub opcodes: Vec<Opcode>,
     pc: usize,
+    gas_used: u64,
 }
 
 impl StackMachineState {
@@ -50,6 +66,7 @@ impl StackMachineState {
             return_stack: Vec::new(),
             opcodes: Vec::new(),
             pc: 0,
+            gas_used: 0,
         }
     }
 }
@@ -67,7 +84,11 @@ impl StackMachine {
         }
     }
 
-    pub fn execute(&mut self, starting_point: usize) -> Option<StackMachineError> {
+    pub fn execute(
+        &mut self,
+        starting_point: usize,
+        gas_limit: GasLimit,
+    ) -> Result<(), StackMachineError> {
         self.st.pc = starting_point;
         loop {
             let mut pc_reset = false;
@@ -100,7 +121,7 @@ impl StackMachine {
                 }
                 Opcode::RET => {
                     match self.st.return_stack.pop() {
-                        None => return None,
+                        None => return Ok(()),
                         Some(oldpc) => self.st.pc = oldpc,
                     };
                     pc_reset = true;
@@ -147,6 +168,14 @@ impl StackMachine {
             };
             if pc_reset == false {
                 self.st.pc += 1;
+            }
+
+            self.st.gas_used += 1;
+
+            if let GasLimit::Limited(x) = gas_limit {
+                if self.st.gas_used > x {
+                    return Err(StackMachineError::RanOutOfGas);
+                }
             }
         }
     }

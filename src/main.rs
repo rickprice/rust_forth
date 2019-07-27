@@ -1,8 +1,9 @@
 use exit::Exit;
+use rust_forth::forth_compiler::ForthCompiler;
+use rust_forth::stack_machine::GasLimit;
 use rust_forth::stack_machine::Opcode;
 use rust_forth::stack_machine::StackMachine;
 use rust_forth::ForthError;
-use rust_forth::forth_compiler::ForthCompiler;
 use rust_forth::Handled;
 use rust_forth::State;
 use rust_forth::Token;
@@ -52,43 +53,43 @@ fn run() -> Result<(), ForthError> {
     ]);
 
     // Execute the instructions
-    sm.execute(0);
+    sm.execute(0, GasLimit::Limited(100))?;
 
     assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
-/*
-    let mut rf = ForthInterpreter::new();
+    /*
+        let mut rf = ForthInterpreter::new();
 
-    let startup = fs::read_to_string("init.forth")?;
-    rf.execute_string(&startup)?;
+        let startup = fs::read_to_string("init.forth")?;
+        rf.execute_string(&startup)?;
 
-    rf.execute_string("predefined1 123 predefined2 456 POP Numbers MUL ADD DUP")?;
+        rf.execute_string("predefined1 123 predefined2 456 POP Numbers MUL ADD DUP")?;
 
-    rf.execute_string(": RickCommand 123456 DUP ADD 777 ; RickCommand RickCommand")?;
+        rf.execute_string(": RickCommand 123456 DUP ADD 777 ; RickCommand RickCommand")?;
 
-    assert_eq!(
-        rf.access_stack(),
-        &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
-    );
+        assert_eq!(
+            rf.access_stack(),
+            &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
+        );
 
-    rf.token_handlers
-        .push(Box::new(ExternalCommandHandler::new()));
+        rf.token_handlers
+            .push(Box::new(ExternalCommandHandler::new()));
 
-    rf.execute_string("1111 123456 OUT 123456 IN")?;
+        rf.execute_string("1111 123456 OUT 123456 IN")?;
 
-    assert_eq!(
-        rf.access_stack(),
-        &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777, 777]
-    );
+        assert_eq!(
+            rf.access_stack(),
+            &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777, 777]
+        );
 
-    rf.push_stack(123);
-    rf.push_stack(321);
-    rf.push_stack(0);
-    rf.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN")
-        .unwrap();
-    let n = rf.pop_stack().unwrap();
+        rf.push_stack(123);
+        rf.push_stack(321);
+        rf.push_stack(0);
+        rf.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN")
+            .unwrap();
+        let n = rf.pop_stack().unwrap();
 
-    assert_eq!(n, 1332);
-*/
+        assert_eq!(n, 1332);
+    */
     Ok(())
 }
 /*

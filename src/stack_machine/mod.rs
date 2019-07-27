@@ -16,6 +16,7 @@ pub trait HandleTrap {
         -> Result<TrapHandled, StackMachineError>;
 }
 
+    fn from(_: option::NoneError) -> Self {
 #[derive(Debug, Clone)]
 pub enum Opcode {
     JMP,

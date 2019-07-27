@@ -32,6 +32,7 @@ pub enum Opcode {
     DIV,
     DUP,
     TRAP,
+    NOP,
 }
 
 pub struct StackMachineState {
@@ -141,6 +142,7 @@ impl StackMachine {
                         }
                     }
                 }
+                Opcode::NOP => {}
             };
             if pc_reset == false {
                 self.st.pc += 1;

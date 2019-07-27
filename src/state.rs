@@ -1,8 +1,5 @@
 use super::error::ForthError;
-use super::stack_machine::Opcode;
 use super::stack_machine::StackMachine;
-use super::token_handler::Token;
-use std::collections::HashMap;
 
 pub struct State {
     pub sm: StackMachine,
@@ -16,7 +13,7 @@ impl State {
             last_function: 0,
         }
     }
-} 
+}
 
 #[derive(Debug)]
 pub struct NumberStack {

@@ -2,8 +2,7 @@ use exit::Exit;
 use rust_forth::stack_machine::Opcode;
 use rust_forth::stack_machine::StackMachine;
 use rust_forth::ForthError;
-use rust_forth::ForthInterpreter;
-use rust_forth::HandleToken;
+use rust_forth::forth_compiler::ForthCompiler;
 use rust_forth::Handled;
 use rust_forth::State;
 use rust_forth::Token;
@@ -56,7 +55,7 @@ fn run() -> Result<(), ForthError> {
     sm.execute(0);
 
     assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
-
+/*
     let mut rf = ForthInterpreter::new();
 
     let startup = fs::read_to_string("init.forth")?;
@@ -89,10 +88,10 @@ fn run() -> Result<(), ForthError> {
     let n = rf.pop_stack().unwrap();
 
     assert_eq!(n, 1332);
-
+*/
     Ok(())
 }
-
+/*
 pub struct ExternalCommandHandler {}
 
 impl HandleToken for ExternalCommandHandler {
@@ -135,3 +134,4 @@ impl ExternalCommandHandler {
         ExternalCommandHandler {}
     }
 }
+*/

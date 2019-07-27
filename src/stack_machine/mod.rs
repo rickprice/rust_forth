@@ -384,6 +384,30 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_execute_pop_error() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::POP,
+            Opcode::POP,
+            Opcode::POP,
+            Opcode::POP,
+            Opcode::POP,
+            Opcode::LDI(2),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+    }
+
+    #[test]
     fn test_execute_swap() {
         let mut sm = StackMachine::new();
 
@@ -518,10 +542,5 @@ mod tests {
 
         // Execute the instructions
         sm.execute(0, GasLimit::Limited(10)).unwrap();
-
-        assert_eq!(
-            sm.st.number_stack,
-            vec![321, 39483, 0, 2, 4, 6, 8, 9, 7, 5, 3, 1]
-        );
     }
 }

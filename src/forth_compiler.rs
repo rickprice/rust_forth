@@ -135,6 +135,7 @@ impl ForthCompiler {
         let mut ol = self.compile_token_vector(token_vector)?;
         self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
         self.sm.st.opcodes.append(&mut ol);
+        self.sm.st.opcodes.push(Opcode::RET);
         self.sm.execute(self.last_function, gas_limit)?;
         Ok(())
     }

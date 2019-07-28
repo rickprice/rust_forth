@@ -55,29 +55,43 @@ fn run() -> Result<(), ForthError> {
     // Execute the instructions
     sm.execute(0, GasLimit::Limited(100))?;
 
-    assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
+    assert_eq!(
+        sm.st.number_stack,
+        vec![321, 39483, 0, 2, 4, 6, 8, 9, 7, 5, 3, 1]
+    );
 
     let mut fc = ForthCompiler::new();
 
-        let startup = fs::read_to_string("init.forth")?;
-        fc.execute_string(&startup,GasLimit::Limited(100))?;
+    fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
 
-        fc.execute_string("predefined1 123 predefined2 456 POP Numbers MUL ADD DUP",GasLimit::Limited(100))?;
+    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
 
-        fc.execute_string(": RickCommand 123456 DUP ADD 777 ; RickCommand RickCommand",GasLimit::Limited(100))?;
+    let startup = fs::read_to_string("init.forth")?;
+    fc.execute_string(&startup, GasLimit::Limited(100))?;
 
-        assert_eq!(
-            &fc.sm.st.number_stack,
-            &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
-        );
+    fc.execute_string(
+        "predefined1 123 predefined2 456 POP Numbers MUL ADD DUP",
+        GasLimit::Limited(100),
+    )?;
 
-        fc.sm.st.number_stack.push(123);
-        fc.sm.st.number_stack.push(321);
-        fc.sm.st.number_stack.push(0);
-        fc.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN",GasLimit::Limited(100)) .unwrap();
-        let n = fc.sm.st.number_stack.pop().unwrap();
+    fc.execute_string(
+        ": RickCommand 123456 DUP ADD 777 ; RickCommand RickCommand",
+        GasLimit::Limited(100),
+    )?;
 
-        assert_eq!(n, 1332);
+    assert_eq!(
+        &fc.sm.st.number_stack,
+        &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
+    );
+
+    fc.sm.st.number_stack.push(123);
+    fc.sm.st.number_stack.push(321);
+    fc.sm.st.number_stack.push(0);
+    fc.execute_string("IF ADD 2 MUL ELSE ADD 3 MUL THEN", GasLimit::Limited(100))
+        .unwrap();
+    let n = fc.sm.st.number_stack.pop().unwrap();
+
+    assert_eq!(n, 1332);
 
     /*
         let mut rf = ForthInterpreter::new();

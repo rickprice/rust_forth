@@ -66,6 +66,10 @@ fn run() -> Result<(), ForthError> {
 
     assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
 
+    fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
+
+    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888]);
+
     let startup = fs::read_to_string("init.forth")?;
     fc.execute_string(&startup, GasLimit::Limited(100))?;
 

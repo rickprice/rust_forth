@@ -92,10 +92,13 @@ impl ForthCompiler {
         &mut self,
         token_vector: &Vec<Token>,
     ) -> Result<Vec<Opcode>, ForthError> {
-        let mut tv: Vec<Opcode> = Vec::new();
+        let mut tvi: Vec<Opcode> = Vec::new();
+        let mut tvc: Vec<Opcode> = Vec::new();
         let mut mode = Mode::Interpreting;
 
         for t in token_vector.iter() {
+            let mut tv: Vec<Opcode> = Vec::new();
+
             match t {
                 Token::Number(n) => tv.push(Opcode::LDI(*n)),
                 Token::Command(s) => {
@@ -111,10 +114,29 @@ impl ForthCompiler {
                 }
                 Token::Colon(s) => {
                     println!("Colon, starting compiling");
-                    mode = Mode::Compiling(String::from(s));
+                    match mode {
+                        Mode::Interpreting => {
+                            mode = Mode::Compiling(String::from(s));
+                        }
+                        Mode::Compiling(_) => {
+                            return Err(ForthError::InvalidSyntax(
+                                "Second colon before semicolon".to_string(),
+                            ));
+                        }
+                    }
                 }
                 Token::SemiColon => {
-                    panic!("Token::SemiColon case should not happen here; are you missing a prior semicolon?");
+                    println!("Semicolon, finishing compiling");
+                    match mode {
+                        Mode::Interpreting => {
+                            return Err(ForthError::InvalidSyntax(
+                                "Semicolon before colon".to_string(),
+                            ));
+                        }
+                        Mode::Compiling(_) => {
+                            mode = Mode::Interpreting;
+                        }
+                    }
                 }
                 Token::End => {
                     panic!("Token::End not coded yet");
@@ -123,8 +145,17 @@ impl ForthCompiler {
                     panic!("Token::Error not coded yet");
                 }
             }
+
+            match mode {
+                Mode::Interpreting => {
+                    tvi.append(&mut tv);
+                }
+                Mode::Compiling(_) => {
+                    tvc.append(&mut tv);
+                }
+            }
         }
-        return Ok(tv);
+        return Ok(tvi);
     }
 
     fn execute_token_vector(
@@ -144,5 +175,25 @@ impl ForthCompiler {
         let tv = self.tokenize_string(s)?;
         self.execute_token_vector(&tv, gas_limit)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_execute_intrinsics_1() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+
+        fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888]);
     }
 }

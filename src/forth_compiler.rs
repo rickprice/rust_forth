@@ -108,8 +108,11 @@ impl ForthCompiler {
                         tv.push(Opcode::LDI(*offset as i64));
                         tv.push(Opcode::CALL);
                     } else {
-                        let ol = self.intrinsic_words.get::<str>(s)?;
-                        tv.append(&mut ol.clone());
+                        if let Some(ol) = self.intrinsic_words.get::<str>(s) {
+                            tv.append(&mut ol.clone());
+                        } else {
+                            return Err(ForthError::UnknownToken(s.to_string()));
+                        }
                     }
                 }
                 Token::Colon(s) => {
@@ -134,7 +137,10 @@ impl ForthCompiler {
                             ));
                         }
                         Mode::Compiling(s) => {
-                            // Put a return on the end
+                            // Remove anything extraneous from the end of the opcode array,
+                            // typically previous immediate mode tokens
+                            self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
+                            // Put a return on the end of function definition
                             tvc.push(Opcode::RET);
                             // The current function start is the end of the last function
                             let function_start = self.last_function;
@@ -146,6 +152,9 @@ impl ForthCompiler {
                             self.word_addresses.insert(s, function_start);
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
+                            //                            println!("Token Memory {:?}", self.sm.st.opcodes);
+                            //                            println!("Word Addresses {:?}", self.word_addresses);
+                            //                            println!("Last function {}", self.last_function);
                         }
                     }
                 }

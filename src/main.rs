@@ -63,24 +63,24 @@ fn run() -> Result<(), ForthError> {
     let mut fc = ForthCompiler::new();
 
     fc.execute_string(
-        ": RickTest 123 321 ADD 2 MUL ; RickTest",
+        ": RickTest 1 2 ADD 3 MUL ; RickTest",
         GasLimit::Limited(100),
     )?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+    //    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
 
-    fc.execute_string(": RickTest2 123 321 ADD 2 MUL ;", GasLimit::Limited(100))?;
+    fc.execute_string(": RickTest2 4 5 ADD 6 MUL ;", GasLimit::Limited(100))?;
 
     fc.execute_string(
-        ": RickTest3 RickTest RickTest2 321 ADD 2 MUL ;",
+        ": RickTest3 RickTest RickTest2 7 ADD 8 MUL ;",
         GasLimit::Limited(100),
     )?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+    //    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
 
     fc.execute_string("RickTest3", GasLimit::Limited(100))?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+    assert_eq!(&fc.sm.st.number_stack, &vec![9_i64, 9, 488]);
 
     fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
 

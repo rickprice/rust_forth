@@ -133,7 +133,18 @@ impl ForthCompiler {
                                 "Semicolon before colon".to_string(),
                             ));
                         }
-                        Mode::Compiling(_) => {
+                        Mode::Compiling(s) => {
+                            // Put a return on the end
+                            tvc.push(Opcode::RET);
+                            // The current function start is the end of the last function
+                            let function_start = self.last_function;
+                            // Move last function pointer
+                            self.last_function += tvc.len();
+                            // Add the function to the opcode memory
+                            self.sm.st.opcodes.append(&mut tvc);
+                            // Remember where to find it...
+                            self.word_addresses.insert(s, function_start);
+                            // Switch back to interpreting mode
                             mode = Mode::Interpreting;
                         }
                     }
@@ -195,5 +206,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888]);
+    }
+
+    #[test]
+    fn test_compile_1() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string(
+            ": RickTest 123 321 ADD 2 MUL ; RickTest",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+
+        fc.execute_string("123 321 ADD 2 MUL RickTest", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
     }
 }

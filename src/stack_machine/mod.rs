@@ -108,8 +108,8 @@ impl StackMachine {
                     pc_reset = true;
                 }
                 Opcode::JRZ => {
-                    let x = self.st.number_stack.pop()?;
                     let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
+                    let x = self.st.number_stack.pop()?;
                     if x == 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
@@ -243,15 +243,15 @@ mod tests {
             Opcode::LDI(0),
             Opcode::LDI(1),
             Opcode::LDI(2),
-            Opcode::LDI(2), // TOS for JRZ
             Opcode::LDI(1), // This won't happen because TOS won't be zero...
+            Opcode::LDI(2), // TOS for JRZ
             Opcode::JRZ,
             Opcode::LDI(3),
             Opcode::LDI(4),
             Opcode::LDI(5),
-            Opcode::LDI(2), // Relative Jump of 1
             Opcode::LDI(0),
-            Opcode::JRZ, // Jump over the LDI(6)
+            Opcode::LDI(2), // Relative Jump of 1
+            Opcode::JRZ,    // Jump over the LDI(6)
             Opcode::LDI(6),
             Opcode::LDI(7),
             Opcode::LDI(8),
@@ -276,15 +276,15 @@ mod tests {
             Opcode::RET,
             Opcode::LDI(1),
             Opcode::LDI(2),
-            Opcode::LDI(-2), // TOS for JRZ
             Opcode::LDI(1),  // This won't happen because TOS won't be zero...
+            Opcode::LDI(-2), // TOS for JRZ
             Opcode::JRZ,
             Opcode::LDI(3),
             Opcode::LDI(4),
             Opcode::LDI(5),
-            Opcode::LDI(-12), // Relative Jump to start of code
             Opcode::LDI(0),
-            Opcode::JRZ, // Jump over the LDI(6)
+            Opcode::LDI(-12), // Relative Jump to start of code
+            Opcode::JRZ,      // Jump over the LDI(6)
             Opcode::LDI(6),
             Opcode::LDI(7),
             Opcode::LDI(8),

@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 
 /// This Enum lists the token types that are used by the Forth interpreter
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Token {
     Number(i64),
     Command(String),
@@ -55,11 +55,13 @@ impl ForthCompiler {
 }
 
 /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
+#[derive(Debug)]
 enum Mode {
     Interpreting,
     Compiling(String),
 }
 
+#[derive(Debug)]
 struct DeferredIfStatement {
     if_location: usize,
     else_location: Option<usize>,
@@ -117,7 +119,10 @@ impl ForthCompiler {
             let mut tv: Vec<Opcode> = Vec::new();
 
             match t {
-                Token::Number(n) => tv.push(Opcode::LDI(*n)),
+                Token::Number(n) => {
+                    println!("CompiledCommands: Compiling number {}", n);
+                    tv.push(Opcode::LDI(*n));
+                }
                 Token::Command(s) => {
                     println!("CompiledCommands: Compiling token {}", s);
                     let current_instruction = match mode {
@@ -129,12 +134,14 @@ impl ForthCompiler {
                         "IF" => {
                             deferred_if_statements
                                 .push(DeferredIfStatement::new(current_instruction));
+                            println!("(IF)Deferred If Stack {:?}", deferred_if_statements);
                             tv.push(Opcode::LDI(0));
                             tv.push(Opcode::JRZ);
                         }
                         "ELSE" => {
                             if let Some(x) = deferred_if_statements.last_mut() {
                                 x.else_location = Some(current_instruction);
+                                println!("(ELSE) Deferred If Stack {:?}", deferred_if_statements);
                                 tv.push(Opcode::LDI(0));
                                 tv.push(Opcode::JR);
                             } else {
@@ -142,10 +149,11 @@ impl ForthCompiler {
                                     "ELSE without IF".to_owned(),
                                 ));
                             }
-                            deferred_if_statements.push(DeferredIfStatement::new(0));
                         }
-                        "ENDIF" => {
+                        "THEN" => {
+                            println!("(THEN) Deferred If Stack {:?}", deferred_if_statements);
                             if let Some(x) = deferred_if_statements.pop() {
+                                println!("(if let Some(x)) Deferred If Stack {:?}", x);
                                 let if_jump_offset = (current_instruction as u64
                                     - x.if_location as u64)
                                     .try_into()
@@ -173,12 +181,18 @@ impl ForthCompiler {
                                         }
                                     }
                                     Mode::Interpreting => {
+                                        println!("if structure: {:?}", x);
                                         tvi[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        if let (Some(location), Some(offset)) =
+                                            (else_jump_location, else_jump_offset)
+                                        {
+                                            tvi[location] = Opcode::LDI(offset);
+                                        }
                                     }
                                 }
                             } else {
                                 return Err(ForthError::InvalidSyntax(
-                                    "ENDIF without IF".to_owned(),
+                                    "THEN without IF".to_owned(),
                                 ));
                             }
                         }
@@ -233,9 +247,9 @@ impl ForthCompiler {
                             self.word_addresses.insert(s, function_start);
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
-                            //                            println!("Token Memory {:?}", self.sm.st.opcodes);
-                            //                            println!("Word Addresses {:?}", self.word_addresses);
-                            //                            println!("Last function {}", self.last_function);
+                            println!("Token Memory {:?}", self.sm.st.opcodes);
+                            println!("Word Addresses {:?}", self.word_addresses);
+                            println!("Last function {}", self.last_function);
                         }
                     }
                 }
@@ -265,6 +279,7 @@ impl ForthCompiler {
         gas_limit: GasLimit,
     ) -> Result<(), ForthError> {
         let mut ol = self.compile_token_vector(token_vector)?;
+        println!("Compiled Opcodes: {:?}", ol);
         self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
         self.sm.st.opcodes.append(&mut ol);
         self.sm.st.opcodes.push(Opcode::RET);
@@ -314,5 +329,15 @@ mod tests {
             .unwrap();
 
         assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
+    }
+
+    #[test]
+    fn test_if_else_1() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string("0 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![3_i64]);
     }
 }

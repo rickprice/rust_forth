@@ -18,49 +18,9 @@ fn main() -> Exit<ForthError> {
 }
 
 fn run() -> Result<(), ForthError> {
-    let mut sm = StackMachine::new();
-
-    // Populate the number stack
-    sm.st.number_stack.extend_from_slice(&[321, 39483]);
-    // Put the opcodes into the *memory*
-    sm.st.opcodes.extend_from_slice(&[
-        Opcode::LDI(0),
-        Opcode::LDI(5),
-        Opcode::CALL,
-        Opcode::LDI(1),
-        Opcode::RET,
-        Opcode::LDI(2),
-        Opcode::LDI(10),
-        Opcode::CALL,
-        Opcode::LDI(3),
-        Opcode::RET,
-        Opcode::LDI(4),
-        Opcode::LDI(15),
-        Opcode::CALL,
-        Opcode::LDI(5),
-        Opcode::RET,
-        Opcode::LDI(6),
-        Opcode::LDI(20),
-        Opcode::CALL,
-        Opcode::LDI(7),
-        Opcode::RET,
-        Opcode::LDI(8),
-        Opcode::LDI(25),
-        Opcode::CALL,
-        Opcode::LDI(9),
-        Opcode::RET,
-        Opcode::RET,
-    ]);
-
-    // Execute the instructions
-    sm.execute(0, GasLimit::Limited(100))?;
-
-    assert_eq!(
-        sm.st.number_stack,
-        vec![321, 39483, 0, 2, 4, 6, 8, 9, 7, 5, 3, 1]
-    );
-
     let mut fc = ForthCompiler::new();
+
+    fc.execute_string("0 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))?;
 
     fc.execute_string(
         ": RickTest 1 2 ADD 3 MUL ; RickTest",

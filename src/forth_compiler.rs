@@ -3,6 +3,8 @@ use super::stack_machine::GasLimit;
 use super::stack_machine::Opcode;
 use super::stack_machine::StackMachine;
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 
 /// This Enum lists the token types that are used by the Forth interpreter
 #[derive(Debug, Clone)]
@@ -58,6 +60,20 @@ enum Mode {
     Compiling(String),
 }
 
+struct DeferredIfStatement {
+    if_location: usize,
+    else_location: Option<usize>,
+}
+
+impl DeferredIfStatement {
+    pub fn new(if_location: usize) -> DeferredIfStatement {
+        DeferredIfStatement {
+            if_location: if_location,
+            else_location: None,
+        }
+    }
+}
+
 impl ForthCompiler {
     fn tokenize_string(&self, s: &str) -> Result<Vec<Token>, ForthError> {
         let mut tv = Vec::new();
@@ -92,6 +108,7 @@ impl ForthCompiler {
         &mut self,
         token_vector: &Vec<Token>,
     ) -> Result<Vec<Opcode>, ForthError> {
+        let mut deferred_if_statements = Vec::new();
         let mut tvi: Vec<Opcode> = Vec::new();
         let mut tvc: Vec<Opcode> = Vec::new();
         let mut mode = Mode::Interpreting;
@@ -103,15 +120,79 @@ impl ForthCompiler {
                 Token::Number(n) => tv.push(Opcode::LDI(*n)),
                 Token::Command(s) => {
                     println!("CompiledCommands: Compiling token {}", s);
+                    let current_instruction = match mode {
+                        Mode::Interpreting => tvi.len(),
+                        Mode::Compiling(_) => tvc.len(),
+                    };
 
-                    if let Some(offset) = self.word_addresses.get(s) {
-                        tv.push(Opcode::LDI(*offset as i64));
-                        tv.push(Opcode::CALL);
-                    } else {
-                        if let Some(ol) = self.intrinsic_words.get::<str>(s) {
-                            tv.append(&mut ol.clone());
-                        } else {
-                            return Err(ForthError::UnknownToken(s.to_string()));
+                    match s.as_ref() {
+                        "IF" => {
+                            deferred_if_statements
+                                .push(DeferredIfStatement::new(current_instruction));
+                            tv.push(Opcode::LDI(0));
+                            tv.push(Opcode::JRZ);
+                        }
+                        "ELSE" => {
+                            if let Some(x) = deferred_if_statements.last_mut() {
+                                x.else_location = Some(current_instruction);
+                                tv.push(Opcode::LDI(0));
+                                tv.push(Opcode::JR);
+                            } else {
+                                return Err(ForthError::InvalidSyntax(
+                                    "ELSE without IF".to_owned(),
+                                ));
+                            }
+                            deferred_if_statements.push(DeferredIfStatement::new(0));
+                        }
+                        "ENDIF" => {
+                            if let Some(x) = deferred_if_statements.pop() {
+                                let if_jump_offset = (current_instruction as u64
+                                    - x.if_location as u64)
+                                    .try_into()
+                                    .unwrap();
+                                let (else_jump_location, else_jump_offset): (
+                                    Option<usize>,
+                                    Option<i64>,
+                                ) = match x.else_location {
+                                    Some(x) => (
+                                        Some(x),
+                                        Some(
+                                            i64::try_from(current_instruction as u64 - x as u64)
+                                                .unwrap(),
+                                        ),
+                                    ),
+                                    None => (None, None),
+                                };
+                                match mode {
+                                    Mode::Compiling(_) => {
+                                        tvc[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        if let (Some(location), Some(offset)) =
+                                            (else_jump_location, else_jump_offset)
+                                        {
+                                            tvc[location] = Opcode::LDI(offset);
+                                        }
+                                    }
+                                    Mode::Interpreting => {
+                                        tvi[x.if_location] = Opcode::LDI(if_jump_offset);
+                                    }
+                                }
+                            } else {
+                                return Err(ForthError::InvalidSyntax(
+                                    "ENDIF without IF".to_owned(),
+                                ));
+                            }
+                        }
+                        _ => {
+                            if let Some(offset) = self.word_addresses.get(s) {
+                                tv.push(Opcode::LDI(*offset as i64));
+                                tv.push(Opcode::CALL);
+                            } else {
+                                if let Some(ol) = self.intrinsic_words.get::<str>(s) {
+                                    tv.append(&mut ol.clone());
+                                } else {
+                                    return Err(ForthError::UnknownToken(s.to_string()));
+                                }
+                            }
                         }
                     }
                 }

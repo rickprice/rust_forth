@@ -135,6 +135,7 @@ impl ForthCompiler {
                             deferred_if_statements
                                 .push(DeferredIfStatement::new(current_instruction));
                             println!("(IF)Deferred If Stack {:?}", deferred_if_statements);
+                            tv.push(Opcode::CMPNZ);
                             tv.push(Opcode::LDI(0));
                             tv.push(Opcode::JRZ);
                         }
@@ -155,7 +156,7 @@ impl ForthCompiler {
                             if let Some(x) = deferred_if_statements.pop() {
                                 println!("(if let Some(x)) Deferred If Stack {:?}", x);
                                 let if_jump_offset = (current_instruction as u64
-                                    - x.if_location as u64)
+                                    - (x.if_location + 2) as u64)
                                     .try_into()
                                     .unwrap();
                                 let (else_jump_location, else_jump_offset): (
@@ -165,15 +166,17 @@ impl ForthCompiler {
                                     Some(x) => (
                                         Some(x),
                                         Some(
-                                            i64::try_from(current_instruction as u64 - x as u64)
-                                                .unwrap(),
+                                            i64::try_from(
+                                                current_instruction as u64 - (x + 1) as u64,
+                                            )
+                                            .unwrap(),
                                         ),
                                     ),
                                     None => (None, None),
                                 };
                                 match mode {
                                     Mode::Compiling(_) => {
-                                        tvc[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        tvc[x.if_location + 1] = Opcode::LDI(if_jump_offset);
                                         if let (Some(location), Some(offset)) =
                                             (else_jump_location, else_jump_offset)
                                         {
@@ -182,7 +185,7 @@ impl ForthCompiler {
                                     }
                                     Mode::Interpreting => {
                                         println!("if structure: {:?}", x);
-                                        tvi[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        tvi[x.if_location + 1] = Opcode::LDI(if_jump_offset);
                                         if let (Some(location), Some(offset)) =
                                             (else_jump_location, else_jump_offset)
                                         {
@@ -270,6 +273,7 @@ impl ForthCompiler {
                 }
             }
         }
+        println!("Compiled Codes {:?}", tvi);
         return Ok(tvi);
     }
 
@@ -339,5 +343,15 @@ mod tests {
             .unwrap();
 
         assert_eq!(&fc.sm.st.number_stack, &vec![3_i64]);
+    }
+
+    #[test]
+    fn test_if_else_2() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string("1 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![7_i64]);
     }
 }

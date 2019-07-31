@@ -38,6 +38,8 @@ pub enum Opcode {
     JR,
     JRZ,
     CALL,
+    CMPZ,
+    CMPNZ,
     LDI(i64),
     POP,
     SWAP,
@@ -46,6 +48,7 @@ pub enum Opcode {
     SUB,
     MUL,
     DIV,
+    NOT,
     DUP,
     TRAP,
     NOP,
@@ -107,6 +110,22 @@ impl StackMachine {
                     self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?;
                     pc_reset = true;
                 }
+                Opcode::CMPZ => {
+                    let x = self.st.number_stack.pop()?;
+                    if x == 0 {
+                        self.st.number_stack.push(0);
+                    } else {
+                        self.st.number_stack.push(-1);
+                    }
+                }
+                Opcode::CMPNZ => {
+                    let x = self.st.number_stack.pop()?;
+                    if x == 0 {
+                        self.st.number_stack.push(-1);
+                    } else {
+                        self.st.number_stack.push(0);
+                    }
+                }
                 Opcode::JRZ => {
                     let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
                     let x = self.st.number_stack.pop()?;
@@ -145,6 +164,10 @@ impl StackMachine {
                     let x = self.st.number_stack.pop()?;
                     let y = self.st.number_stack.pop()?;
                     self.st.number_stack.push(x / y);
+                }
+                Opcode::NOT => {
+                    let x = self.st.number_stack.pop()?;
+                    self.st.number_stack.push(!x);
                 }
                 Opcode::DUP => {
                     let x = self.st.number_stack.pop()?;
@@ -295,6 +318,74 @@ mod tests {
         sm.execute(2, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
+    }
+
+    #[test]
+    fn test_execute_cmpz_1() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 321, 0]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::CMPZ, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![123_i64, 321, 0]);
+    }
+
+    #[test]
+    fn test_execute_cmpz_2() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 321, 1]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::CMPZ, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![123_i64, 321, -1]);
+    }
+
+    #[test]
+    fn test_execute_cmpnz_1() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 321, 0]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::CMPNZ, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![123_i64, 321, -1]);
+    }
+
+    #[test]
+    fn test_execute_cmpnz_2() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[123, 321, 1]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::CMPNZ, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![123_i64, 321, 0]);
     }
 
     #[test]
@@ -486,6 +577,21 @@ mod tests {
         sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![123]);
+    }
+
+    #[test]
+    fn test_execute_not() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 0]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[Opcode::NOT, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![321_i64, -1]);
     }
 
     #[test]

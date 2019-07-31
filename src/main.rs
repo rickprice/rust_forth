@@ -20,7 +20,9 @@ fn main() -> Exit<ForthError> {
 fn run() -> Result<(), ForthError> {
     let mut fc = ForthCompiler::new();
 
-    fc.execute_string("0 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))?;
+    fc.execute_string("1 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))?;
+
+    println!("Contents of Number Stack {:?}", fc.sm.st.number_stack);
 
     fc.execute_string(
         ": RickTest 1 2 ADD 3 MUL ; RickTest",
@@ -40,7 +42,7 @@ fn run() -> Result<(), ForthError> {
 
     fc.execute_string("RickTest3", GasLimit::Limited(100))?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![9_i64, 9, 488]);
+    assert_eq!(&fc.sm.st.number_stack, &vec![3_i64, 9, 9, 488]);
 
     fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
 

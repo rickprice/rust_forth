@@ -37,6 +37,7 @@ pub enum Opcode {
     JMP,
     JR,
     JRZ,
+    JRNZ,
     CALL,
     CMPZ,
     CMPNZ,
@@ -130,6 +131,14 @@ impl StackMachine {
                     let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
                     let x = self.st.number_stack.pop()?;
                     if x == 0 {
+                        self.st.pc = usize::try_from(new_offset).unwrap();
+                        pc_reset = true;
+                    }
+                }
+                Opcode::JRNZ => {
+                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
+                    let x = self.st.number_stack.pop()?;
+                    if x != 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
                     }
@@ -308,6 +317,71 @@ mod tests {
             Opcode::LDI(0),
             Opcode::LDI(-12), // Relative Jump to start of code
             Opcode::JRZ,      // Jump over the LDI(6)
+            Opcode::LDI(6),
+            Opcode::LDI(7),
+            Opcode::LDI(8),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(2, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 1, 2, 3, 4, 5, 0]);
+    }
+
+    #[test]
+    fn test_execute_jrnz_forward() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::LDI(0), // This won't happen because TOS is zero...
+            Opcode::LDI(2), // TOS for JRZ
+            Opcode::JRNZ,
+            Opcode::LDI(3),
+            Opcode::LDI(4),
+            Opcode::LDI(5),
+            Opcode::LDI(1),
+            Opcode::LDI(2), // Relative Jump of 1
+            Opcode::JRNZ,   // Jump over the LDI(6)
+            Opcode::LDI(6),
+            Opcode::LDI(7),
+            Opcode::LDI(8),
+            Opcode::RET,
+        ]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![321, 39483, 0, 1, 2, 3, 4, 5, 7, 8]);
+    }
+
+    #[test]
+    fn test_execute_jrnz_backward() {
+        let mut sm = StackMachine::new();
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[321, 39483]);
+        // Put the opcodes into the *memory*
+        sm.st.opcodes.extend_from_slice(&[
+            Opcode::LDI(0),
+            Opcode::RET,
+            Opcode::LDI(1),
+            Opcode::LDI(2),
+            Opcode::LDI(0),  // This won't happen because TOS is zero...
+            Opcode::LDI(-2), // TOS for JRZ
+            Opcode::JRNZ,
+            Opcode::LDI(3),
+            Opcode::LDI(4),
+            Opcode::LDI(5),
+            Opcode::LDI(1),
+            Opcode::LDI(-12), // Relative Jump to start of code
+            Opcode::JRNZ,     // Jump over the LDI(6)
             Opcode::LDI(6),
             Opcode::LDI(7),
             Opcode::LDI(8),

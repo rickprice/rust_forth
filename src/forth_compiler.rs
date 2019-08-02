@@ -155,10 +155,16 @@ impl ForthCompiler {
                             println!("(THEN) Deferred If Stack {:?}", deferred_if_statements);
                             if let Some(x) = deferred_if_statements.pop() {
                                 println!("(if let Some(x)) Deferred If Stack {:?}", x);
-                                let if_jump_offset = (current_instruction as u64
-                                    - (x.if_location + 1) as u64)
-                                    .try_into()
-                                    .unwrap();
+                                let if_jump_location = x.if_location;
+                                let if_jump_offset = match x.else_location {
+                                    None => (current_instruction as u64
+                                        - (x.if_location + 1) as u64)
+                                        .try_into()
+                                        .unwrap(),
+                                    Some(el) => (current_instruction as u64 - el as u64 + 1)
+                                        .try_into()
+                                        .unwrap(),
+                                };
                                 let (else_jump_location, else_jump_offset): (
                                     Option<usize>,
                                     Option<i64>,
@@ -176,7 +182,7 @@ impl ForthCompiler {
                                 };
                                 match mode {
                                     Mode::Compiling(_) => {
-                                        tvc[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        tvc[if_jump_location] = Opcode::LDI(if_jump_offset);
                                         if let (Some(location), Some(offset)) =
                                             (else_jump_location, else_jump_offset)
                                         {
@@ -185,7 +191,7 @@ impl ForthCompiler {
                                     }
                                     Mode::Interpreting => {
                                         println!("if structure: {:?}", x);
-                                        tvi[x.if_location] = Opcode::LDI(if_jump_offset);
+                                        tvi[if_jump_location] = Opcode::LDI(if_jump_offset);
                                         if let (Some(location), Some(offset)) =
                                             (else_jump_location, else_jump_offset)
                                         {

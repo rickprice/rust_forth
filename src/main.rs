@@ -20,11 +20,11 @@ fn main() -> Exit<ForthError> {
 fn run() -> Result<(), ForthError> {
     let mut fc = ForthCompiler::new();
 
-    fc.execute_string("1 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))?;
-    //fc.execute_string("0 IF 1 2 ADD THEN", GasLimit::Limited(100))?;
+    //fc.execute_string("1 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))?;
+    fc.execute_string("0 IF 1 2 ADD THEN", GasLimit::Limited(100))?;
 
     println!("Contents of Number Stack {:?}", fc.sm.st.number_stack);
-    assert_eq!(&fc.sm.st.number_stack, &vec![7_i64]);
+    assert_eq!(&fc.sm.st.number_stack, &vec![3_i64]);
 
     fc.execute_string(
         ": RickTest 1 2 ADD 3 MUL ; RickTest",
@@ -48,11 +48,11 @@ fn run() -> Result<(), ForthError> {
 
     fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888]);
+    assert_eq!(&fc.sm.st.number_stack, &vec![3_i64, 9, 9, 488, 888]);
 
     fc.execute_string("123 321 ADD 2 MUL", GasLimit::Limited(100))?;
 
-    assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
+    assert_eq!(&fc.sm.st.number_stack, &vec![3_i64, 9, 9, 488, 888, 888]);
 
     let startup = fs::read_to_string("init.forth")?;
     fc.execute_string(&startup, GasLimit::Limited(100))?;
@@ -69,7 +69,7 @@ fn run() -> Result<(), ForthError> {
 
     assert_eq!(
         &fc.sm.st.number_stack,
-        &vec![123_i64, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
+        &vec![3_i64, 9, 9, 488, 888, 888, 123, 1, 2, 3, 34, 34, 246912, 777, 246912, 777]
     );
 
     fc.sm.st.number_stack.push(123);
@@ -79,7 +79,7 @@ fn run() -> Result<(), ForthError> {
         .unwrap();
     let n = fc.sm.st.number_stack.pop().unwrap();
 
-    assert_eq!(n, 1332);
+    assert_eq!(n, 888);
 
     /*
         let mut rf = ForthInterpreter::new();

@@ -1,12 +1,7 @@
 use exit::Exit;
 use rust_forth::forth_compiler::ForthCompiler;
 use rust_forth::stack_machine::GasLimit;
-use rust_forth::stack_machine::Opcode;
-use rust_forth::stack_machine::StackMachine;
 use rust_forth::ForthError;
-use rust_forth::Handled;
-use rust_forth::State;
-use rust_forth::Token;
 use std::fs;
 
 fn main() -> Exit<ForthError> {

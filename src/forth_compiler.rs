@@ -120,11 +120,11 @@ impl ForthCompiler {
 
             match t {
                 Token::Number(n) => {
-                    println!("CompiledCommands: Compiling number {}", n);
+                    //println!("CompiledCommands: Compiling number {}", n);
                     tv.push(Opcode::LDI(*n));
                 }
                 Token::Command(s) => {
-                    println!("CompiledCommands: Compiling token {}", s);
+                    //println!("CompiledCommands: Compiling token {}", s);
                     let current_instruction = match mode {
                         Mode::Interpreting => tvi.len(),
                         Mode::Compiling(_) => tvc.len(),
@@ -134,14 +134,14 @@ impl ForthCompiler {
                         "IF" => {
                             deferred_if_statements
                                 .push(DeferredIfStatement::new(current_instruction));
-                            println!("(IF)Deferred If Stack {:?}", deferred_if_statements);
+                            //println!("(IF)Deferred If Stack {:?}", deferred_if_statements);
                             tv.push(Opcode::LDI(0));
                             tv.push(Opcode::JRNZ);
                         }
                         "ELSE" => {
                             if let Some(x) = deferred_if_statements.last_mut() {
                                 x.else_location = Some(current_instruction);
-                                println!("(ELSE) Deferred If Stack {:?}", deferred_if_statements);
+                                //println!("(ELSE) Deferred If Stack {:?}", deferred_if_statements);
                                 tv.push(Opcode::LDI(0));
                                 tv.push(Opcode::JR);
                             } else {
@@ -152,9 +152,9 @@ impl ForthCompiler {
                         }
                         "THEN" => {
                             // This only works if there isn't an ELSE statement, it needs to jump differently if there is an ELSE statement
-                            println!("(THEN) Deferred If Stack {:?}", deferred_if_statements);
+                            //println!("(THEN) Deferred If Stack {:?}", deferred_if_statements);
                             if let Some(x) = deferred_if_statements.pop() {
-                                println!("(if let Some(x)) Deferred If Stack {:?}", x);
+                                //println!("(if let Some(x)) Deferred If Stack {:?}", x);
                                 let if_jump_location = x.if_location;
                                 let if_jump_offset = match x.else_location {
                                     None => (current_instruction as u64
@@ -190,7 +190,7 @@ impl ForthCompiler {
                                         }
                                     }
                                     Mode::Interpreting => {
-                                        println!("if structure: {:?}", x);
+                                        //println!("if structure: {:?}", x);
                                         tvi[if_jump_location] = Opcode::LDI(if_jump_offset);
                                         if let (Some(location), Some(offset)) =
                                             (else_jump_location, else_jump_offset)
@@ -220,7 +220,7 @@ impl ForthCompiler {
                     }
                 }
                 Token::Colon(s) => {
-                    println!("Colon, starting compiling");
+                    //println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
                             mode = Mode::Compiling(String::from(s));
@@ -233,7 +233,7 @@ impl ForthCompiler {
                     }
                 }
                 Token::SemiColon => {
-                    println!("Semicolon, finishing compiling");
+                    //println!("Semicolon, finishing compiling");
                     match mode {
                         Mode::Interpreting => {
                             return Err(ForthError::InvalidSyntax(
@@ -256,9 +256,9 @@ impl ForthCompiler {
                             self.word_addresses.insert(s, function_start);
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
-                            println!("Token Memory {:?}", self.sm.st.opcodes);
-                            println!("Word Addresses {:?}", self.word_addresses);
-                            println!("Last function {}", self.last_function);
+                            //println!("Token Memory {:?}", self.sm.st.opcodes);
+                            //println!("Word Addresses {:?}", self.word_addresses);
+                            //println!("Last function {}", self.last_function);
                         }
                     }
                 }
@@ -279,7 +279,8 @@ impl ForthCompiler {
                 }
             }
         }
-        println!("Compiled Codes {:?}", tvi);
+        //println!("Compiled Codes {:?}", tvi);
+        //println!("Total size of Codes {:?}", tvi.len());
         return Ok(tvi);
     }
 
@@ -294,6 +295,9 @@ impl ForthCompiler {
         self.sm.st.opcodes.append(&mut ol);
         self.sm.st.opcodes.push(Opcode::RET);
         self.sm.execute(self.last_function, gas_limit)?;
+        println!("Total opcodes defined: {}", self.sm.st.opcodes.len());
+        println!("Total opcodes executed: {}", self.sm.st.gas_used());
+
         Ok(())
     }
 

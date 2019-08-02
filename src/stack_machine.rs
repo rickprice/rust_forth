@@ -75,6 +75,12 @@ impl StackMachineState {
     }
 }
 
+impl StackMachineState {
+    pub fn gas_used(&self) -> u64 {
+        self.gas_used
+    }
+}
+
 pub struct StackMachine {
     pub st: StackMachineState,
     pub trap_handlers: Vec<Box<dyn HandleTrap>>,
@@ -93,6 +99,7 @@ impl StackMachine {
         starting_point: usize,
         gas_limit: GasLimit,
     ) -> Result<(), StackMachineError> {
+        self.st.gas_used=0;
         self.st.pc = starting_point;
         loop {
             let mut pc_reset = false;

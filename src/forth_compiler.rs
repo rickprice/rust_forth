@@ -345,6 +345,32 @@ mod tests {
     fn test_if_else_1() {
         let mut fc = ForthCompiler::new();
 
+        fc.execute_string(
+            "1 2 3 POP POP POP 0 IF 1 2 ADD ELSE 3 4 ADD THEN",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![3_i64]);
+    }
+
+    #[test]
+    fn test_if_else_2() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string(
+            "1 2 3 POP POP POP 1 IF 1 2 ADD ELSE 3 4 ADD THEN",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![7_i64]);
+    }
+
+    #[test]
+    fn test_if_else_3() {
+        let mut fc = ForthCompiler::new();
+
         fc.execute_string("0 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))
             .unwrap();
 
@@ -352,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn test_if_else_2() {
+    fn test_if_else_4() {
         let mut fc = ForthCompiler::new();
 
         fc.execute_string("1 IF 1 2 ADD ELSE 3 4 ADD THEN", GasLimit::Limited(100))

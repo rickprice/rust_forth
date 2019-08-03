@@ -106,18 +106,100 @@ impl ForthCompiler {
         }
     }
 
-    fn compile_token_vector(
+    fn compile_token_vector_strip_word_definitions(
         &mut self,
         token_vector: &Vec<Token>,
     ) -> Result<Vec<Opcode>, ForthError> {
-        let mut deferred_if_statements = Vec::new();
-        let mut tvi: Vec<Opcode> = Vec::new();
-        let mut tvc: Vec<Opcode> = Vec::new();
+        let mut segment_start: usize = 0;
+        let mut segment_stop: usize = token_vector.len();
+        let mut tvi = Vec::new();
         let mut mode = Mode::Interpreting;
 
-        for t in token_vector.iter() {
-            let mut tv: Vec<Opcode> = Vec::new();
+        println!(
+            "compile_token_vector_strip_word_definitions Compiling Forth tokens {:?}",
+            token_vector
+        );
+        for i in 0..token_vector.len() {
+            match &token_vector[i] {
+                Token::Colon(s) => {
+                    println!("Colon, starting compiling");
+                    match mode {
+                        Mode::Interpreting => {
+                            segment_start = i;
+                            mode = Mode::Compiling(String::from(s));
+                        }
+                        Mode::Compiling(_) => {
+                            return Err(ForthError::InvalidSyntax(
+                                "Second colon before semicolon".to_string(),
+                            ));
+                        }
+                    }
+                }
+                Token::SemiColon => {
+                    println!("Semicolon, finishing compiling");
+                    segment_stop = i;
+                    match mode {
+                        Mode::Interpreting => {
+                            return Err(ForthError::InvalidSyntax(
+                                "Semicolon before colon".to_string(),
+                            ));
+                        }
+                        Mode::Compiling(s) => {
+                            // Remove anything extraneous from the end of the opcode array,
+                            // typically previous immediate mode tokens
+                            self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
 
+                            // Get the compiled assembler from the token vector
+                            let mut tvc = self.compile_token_vector(
+                                &token_vector[segment_start + 1..segment_stop],
+                            )?;
+
+                            // Put the return code onto the end
+                            tvc.push(Opcode::RET);
+
+                            // The current function start is the end of the last function
+                            let function_start = self.last_function;
+                            // Move last function pointer
+                            self.last_function += tvc.len();
+                            // Add the function to the opcode memory
+                            self.sm.st.opcodes.append(&mut tvc);
+                            // Remember where to find it...
+                            self.word_addresses.insert(s, function_start);
+                            // Reset start of segment to be past what we have done
+                            segment_start = segment_stop+1;
+                            // Reset end of segment to be the end
+                            segment_stop = token_vector.len();
+                            // Switch back to interpreting mode
+                            mode = Mode::Interpreting;
+                            // Debug
+                            println!("Token Memory {:?}", self.sm.st.opcodes);
+                            println!("Word Addresses {:?}", self.word_addresses);
+                            println!("Last function {}", self.last_function);
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+        println!("compile token vector strip almost last");
+
+        tvi.append(&mut self.compile_token_vector(&token_vector[segment_start..segment_stop])?);
+        tvi.push(Opcode::RET);
+        println!("compile token vector strip last");
+
+        return Ok(tvi);
+    }
+
+    fn compile_token_vector(&mut self, token_vector: &[Token]) -> Result<Vec<Opcode>, ForthError> {
+        let mut deferred_if_statements = Vec::new();
+        let mut tv: Vec<Opcode> = Vec::new();
+
+        println!(
+            "compile_token_vector compiling Forth tokens {:?}",
+            token_vector
+        );
+
+        for t in token_vector.iter() {
             match t {
                 Token::Number(n) => {
                     //println!("CompiledCommands: Compiling number {}", n);
@@ -125,10 +207,7 @@ impl ForthCompiler {
                 }
                 Token::Command(s) => {
                     //println!("CompiledCommands: Compiling token {}", s);
-                    let current_instruction = match mode {
-                        Mode::Interpreting => tvi.len(),
-                        Mode::Compiling(_) => tvc.len(),
-                    };
+                    let current_instruction = tv.len();
 
                     match s.as_ref() {
                         "IF" => {
@@ -180,24 +259,12 @@ impl ForthCompiler {
                                     ),
                                     None => (None, None),
                                 };
-                                match mode {
-                                    Mode::Compiling(_) => {
-                                        tvc[if_jump_location] = Opcode::LDI(if_jump_offset);
-                                        if let (Some(location), Some(offset)) =
-                                            (else_jump_location, else_jump_offset)
-                                        {
-                                            tvc[location] = Opcode::LDI(offset);
-                                        }
-                                    }
-                                    Mode::Interpreting => {
-                                        //println!("if structure: {:?}", x);
-                                        tvi[if_jump_location] = Opcode::LDI(if_jump_offset);
-                                        if let (Some(location), Some(offset)) =
-                                            (else_jump_location, else_jump_offset)
-                                        {
-                                            tvi[location] = Opcode::LDI(offset);
-                                        }
-                                    }
+                                //println!("if structure: {:?}", x);
+                                tv[if_jump_location] = Opcode::LDI(if_jump_offset);
+                                if let (Some(location), Some(offset)) =
+                                    (else_jump_location, else_jump_offset)
+                                {
+                                    tv[location] = Opcode::LDI(offset);
                                 }
                             } else {
                                 return Err(ForthError::InvalidSyntax(
@@ -219,48 +286,11 @@ impl ForthCompiler {
                         }
                     }
                 }
-                Token::Colon(s) => {
-                    //println!("Colon, starting compiling");
-                    match mode {
-                        Mode::Interpreting => {
-                            mode = Mode::Compiling(String::from(s));
-                        }
-                        Mode::Compiling(_) => {
-                            return Err(ForthError::InvalidSyntax(
-                                "Second colon before semicolon".to_string(),
-                            ));
-                        }
-                    }
+                Token::Colon(_) => {
+                    panic!("Colon should never reach this function");
                 }
                 Token::SemiColon => {
-                    //println!("Semicolon, finishing compiling");
-                    match mode {
-                        Mode::Interpreting => {
-                            return Err(ForthError::InvalidSyntax(
-                                "Semicolon before colon".to_string(),
-                            ));
-                        }
-                        Mode::Compiling(s) => {
-                            // Remove anything extraneous from the end of the opcode array,
-                            // typically previous immediate mode tokens
-                            self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
-                            // Put a return on the end of function definition
-                            tvc.push(Opcode::RET);
-                            // The current function start is the end of the last function
-                            let function_start = self.last_function;
-                            // Move last function pointer
-                            self.last_function += tvc.len();
-                            // Add the function to the opcode memory
-                            self.sm.st.opcodes.append(&mut tvc);
-                            // Remember where to find it...
-                            self.word_addresses.insert(s, function_start);
-                            // Switch back to interpreting mode
-                            mode = Mode::Interpreting;
-                            //println!("Token Memory {:?}", self.sm.st.opcodes);
-                            //println!("Word Addresses {:?}", self.word_addresses);
-                            //println!("Last function {}", self.last_function);
-                        }
-                    }
+                    panic!("SemiColon should never reach this function");
                 }
                 Token::End => {
                     panic!("Token::End not coded yet");
@@ -269,19 +299,11 @@ impl ForthCompiler {
                     panic!("Token::Error not coded yet");
                 }
             }
-
-            match mode {
-                Mode::Interpreting => {
-                    tvi.append(&mut tv);
-                }
-                Mode::Compiling(_) => {
-                    tvc.append(&mut tv);
-                }
-            }
         }
-        //println!("Compiled Codes {:?}", tvi);
-        //println!("Total size of Codes {:?}", tvi.len());
-        return Ok(tvi);
+
+        println!("Compiled Codes {:?}", tv);
+        println!("Total size of Codes {:?}", tv.len());
+        return Ok(tv);
     }
 
     fn execute_token_vector(
@@ -289,11 +311,10 @@ impl ForthCompiler {
         token_vector: &Vec<Token>,
         gas_limit: GasLimit,
     ) -> Result<(), ForthError> {
-        let mut ol = self.compile_token_vector(token_vector)?;
+        let mut ol = self.compile_token_vector_strip_word_definitions(token_vector)?;
         println!("Compiled Opcodes: {:?}", ol);
         self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
         self.sm.st.opcodes.append(&mut ol);
-        self.sm.st.opcodes.push(Opcode::RET);
         self.sm.execute(self.last_function, gas_limit)?;
         println!("Total opcodes defined: {}", self.sm.st.opcodes.len());
         println!("Total opcodes executed: {}", self.sm.st.gas_used());
@@ -346,6 +367,23 @@ mod tests {
     }
 
     #[test]
+    fn test_compile_2() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string(
+            ": RickTest 123 321 ADD 2 MUL ; RickTest : RickTestB 123 321 ADD 2 MUL ;",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+
+        fc.execute_string("123 321 ADD 2 MUL RickTest", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
+    }
+  #[test]
     fn test_if_else_1() {
         let mut fc = ForthCompiler::new();
 

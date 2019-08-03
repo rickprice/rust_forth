@@ -99,7 +99,7 @@ impl StackMachine {
         starting_point: usize,
         gas_limit: GasLimit,
     ) -> Result<(), StackMachineError> {
-        self.st.gas_used=0;
+        self.st.gas_used = 0;
         self.st.pc = starting_point;
         loop {
             let mut pc_reset = false;

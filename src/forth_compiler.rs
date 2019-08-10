@@ -166,12 +166,16 @@ impl ForthCompiler {
                             // Remember where to find it...
                             self.word_addresses.insert(s, function_start);
                             // Reset start of segment to be past what we have done
-                            segment_start = segment_stop+1;
+                            segment_start = segment_stop + 1;
                             // Reset end of segment to be the end
                             segment_stop = token_vector.len();
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
                             // Debug
+                            println!(
+                                "Segment start: {:?}, Segment Stop {:?}",
+                                segment_start, segment_stop,
+                            );
                             println!("Token Memory {:?}", self.sm.st.opcodes);
                             println!("Word Addresses {:?}", self.word_addresses);
                             println!("Last function {}", self.last_function);
@@ -183,6 +187,10 @@ impl ForthCompiler {
         }
         println!("compile token vector strip almost last");
 
+        println!(
+            "Segment start: {:?}, Segment Stop {:?}",
+            segment_start, segment_stop,
+        );
         tvi.append(&mut self.compile_token_vector(&token_vector[segment_start..segment_stop])?);
         tvi.push(Opcode::RET);
         println!("compile token vector strip last");
@@ -383,7 +391,7 @@ mod tests {
 
         assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
     }
-  #[test]
+    #[test]
     fn test_if_else_1() {
         let mut fc = ForthCompiler::new();
 

@@ -110,9 +110,8 @@ impl ForthCompiler {
         &mut self,
         token_vector: &Vec<Token>,
     ) -> Result<Vec<Opcode>, ForthError> {
-        let mut segment_start: usize = 0;
-        let mut segment_stop: usize = token_vector.len();
         let mut tvi = Vec::new();
+        let mut tvc = Vec::new();
         let mut mode = Mode::Interpreting;
 
         println!(
@@ -125,7 +124,7 @@ impl ForthCompiler {
                     println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
-                            segment_start = i;
+                            tvc.clear();
                             mode = Mode::Compiling(String::from(s));
                         }
                         Mode::Compiling(_) => {
@@ -137,7 +136,6 @@ impl ForthCompiler {
                 }
                 Token::SemiColon => {
                     println!("Semicolon, finishing compiling");
-                    segment_stop = i;
                     match mode {
                         Mode::Interpreting => {
                             return Err(ForthError::InvalidSyntax(
@@ -150,52 +148,43 @@ impl ForthCompiler {
                             self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
 
                             // Get the compiled assembler from the token vector
-                            let mut tvc = self.compile_token_vector(
-                                &token_vector[segment_start + 1..segment_stop],
-                            )?;
+                            let mut compiled = self.compile_token_vector(&tvc)?;
 
                             // Put the return code onto the end
-                            tvc.push(Opcode::RET);
+                            compiled.push(Opcode::RET);
 
                             // The current function start is the end of the last function
                             let function_start = self.last_function;
                             // Move last function pointer
-                            self.last_function += tvc.len();
+                            self.last_function += compiled.len();
                             // Add the function to the opcode memory
-                            self.sm.st.opcodes.append(&mut tvc);
+                            self.sm.st.opcodes.append(&mut compiled);
                             // Remember where to find it...
                             self.word_addresses.insert(s, function_start);
-                            // Reset start of segment to be past what we have done
-                            segment_start = segment_stop + 1;
-                            // Reset end of segment to be the end
-                            segment_stop = token_vector.len();
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
-                            // Debug
-                            println!(
-                                "Segment start: {:?}, Segment Stop {:?}",
-                                segment_start, segment_stop,
-                            );
                             println!("Token Memory {:?}", self.sm.st.opcodes);
                             println!("Word Addresses {:?}", self.word_addresses);
                             println!("Last function {}", self.last_function);
                         }
                     }
                 }
-                _ => (),
+                x => {
+                    let mut toAddTo = match mode {
+                        Mode::Interpreting=>&mut tvi,
+                        Mode::Compiling(_)=>&mut tvc,
+                    };
+                    toAddTo.push((*x).clone());
+                },
             }
         }
         println!("compile token vector strip almost last");
 
-        println!(
-            "Segment start: {:?}, Segment Stop {:?}",
-            segment_start, segment_stop,
-        );
-        tvi.append(&mut self.compile_token_vector(&token_vector[segment_start..segment_stop])?);
-        tvi.push(Opcode::RET);
+        let mut interpreted_tokens = self.compile_token_vector(&tvi)?;
+        interpreted_tokens.push(Opcode::RET);
         println!("compile token vector strip last");
 
-        return Ok(tvi);
+        return Ok(interpreted_tokens);
     }
 
     fn compile_token_vector(&mut self, token_vector: &[Token]) -> Result<Vec<Opcode>, ForthError> {

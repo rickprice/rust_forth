@@ -113,7 +113,6 @@ impl ForthCompiler {
         let mut tvi = Vec::new();
         let mut mode = Mode::Interpreting;
         let mut starting_position = 0;
-        let mut ending_position = token_vector.len() - 1;
 
         println!(
             "compile_token_vector_strip_word_definitions Compiling Forth tokens {:?}",
@@ -125,7 +124,15 @@ impl ForthCompiler {
                     println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
-                            //                            tvc.clear();
+                            // We end before the current token
+                            // Compile whatever appeared before this compile statement
+                            tvi.append(
+                                &mut self.compile_token_vector(
+                                    &token_vector[starting_position..i - 1],
+                                )?,
+                            );
+                            // Start compiling after this token
+                            starting_position = i + 1;
                             mode = Mode::Compiling(String::from(s));
                         }
                         Mode::Compiling(_) => {
@@ -149,19 +156,21 @@ impl ForthCompiler {
                             self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
 
                             // Get the compiled assembler from the token vector
-                            //                            let mut compiled = self.compile_token_vector(&tvc)?;
-
+                            // stop compiling before the ending token
+                            let mut compiled =
+                                self.compile_token_vector(&token_vector[starting_position..i - 1])?;
                             // Put the return code onto the end
-                            //                            compiled.push(Opcode::RET);
-
+                            compiled.push(Opcode::RET);
                             // The current function start is the end of the last function
                             let function_start = self.last_function;
                             // Move last function pointer
-                            //                           self.last_function += compiled.len();
+                            self.last_function += compiled.len();
                             // Add the function to the opcode memory
-                            //                          self.sm.st.opcodes.append(&mut compiled);
+                            self.sm.st.opcodes.append(&mut compiled);
                             // Remember where to find it...
                             self.word_addresses.insert(s, function_start);
+                            // start compiling again after this token
+                            starting_position = i + 1;
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
                             println!("Token Memory {:?}", self.sm.st.opcodes);
@@ -178,9 +187,7 @@ impl ForthCompiler {
             return Err(ForthError::MissingSemicolonAfterColon);
         }
 
-        tvi.append(
-            &mut self.compile_token_vector(&token_vector[starting_position..ending_position])?,
-        );
+        tvi.append(&mut self.compile_token_vector(&token_vector[starting_position..])?);
         tvi.push(Opcode::RET);
 
         println!("compile token vector strip almost last");

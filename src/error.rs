@@ -9,6 +9,7 @@ pub enum ForthError {
     UnknownToken(String),
     PopOfEmptyStack,
     InvalidSyntax(String),
+    MissingSemicolonAfterColon,
     Io(std::io::Error),
     RanOutOfGas,
 }
@@ -42,9 +43,10 @@ impl From<ForthError> for i32 {
             ForthError::UnknownToken(_) => 3,
             ForthError::PopOfEmptyStack => 4,
             ForthError::InvalidSyntax(_) => 5,
-            ForthError::Io(_) => 6,
-            ForthError::NoneError => 7,
-            ForthError::RanOutOfGas => 8,
+            ForthError::MissingSemicolonAfterColon => 6,
+            ForthError::Io(_) => 7,
+            ForthError::NoneError => 8,
+            ForthError::RanOutOfGas => 9,
         }
     }
 }

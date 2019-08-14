@@ -55,7 +55,7 @@ impl ForthCompiler {
 }
 
 /// This Enum determines whether the Forth interpreter is in Interpreting mode or Compiling mode
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Mode {
     Interpreting,
     Compiling(String),
@@ -111,8 +111,9 @@ impl ForthCompiler {
         token_vector: &Vec<Token>,
     ) -> Result<Vec<Opcode>, ForthError> {
         let mut tvi = Vec::new();
-        let mut tvc = Vec::new();
         let mut mode = Mode::Interpreting;
+        let mut starting_position = 0;
+        let mut ending_position = token_vector.len() - 1;
 
         println!(
             "compile_token_vector_strip_word_definitions Compiling Forth tokens {:?}",
@@ -124,7 +125,7 @@ impl ForthCompiler {
                     println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
-                            tvc.clear();
+                            //                            tvc.clear();
                             mode = Mode::Compiling(String::from(s));
                         }
                         Mode::Compiling(_) => {
@@ -148,17 +149,17 @@ impl ForthCompiler {
                             self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
 
                             // Get the compiled assembler from the token vector
-                            let mut compiled = self.compile_token_vector(&tvc)?;
+                            //                            let mut compiled = self.compile_token_vector(&tvc)?;
 
                             // Put the return code onto the end
-                            compiled.push(Opcode::RET);
+                            //                            compiled.push(Opcode::RET);
 
                             // The current function start is the end of the last function
                             let function_start = self.last_function;
                             // Move last function pointer
-                            self.last_function += compiled.len();
+                            //                           self.last_function += compiled.len();
                             // Add the function to the opcode memory
-                            self.sm.st.opcodes.append(&mut compiled);
+                            //                          self.sm.st.opcodes.append(&mut compiled);
                             // Remember where to find it...
                             self.word_addresses.insert(s, function_start);
                             // Switch back to interpreting mode
@@ -169,22 +170,22 @@ impl ForthCompiler {
                         }
                     }
                 }
-                x => {
-                    let mut toAddTo = match mode {
-                        Mode::Interpreting=>&mut tvi,
-                        Mode::Compiling(_)=>&mut tvc,
-                    };
-                    toAddTo.push((*x).clone());
-                },
+                _ => (),
             }
         }
+
+        if mode != Mode::Interpreting {
+            return Err(ForthError::MissingSemicolonAfterColon);
+        }
+
+        tvi.append(
+            &mut self.compile_token_vector(&token_vector[starting_position..ending_position])?,
+        );
+        tvi.push(Opcode::RET);
+
         println!("compile token vector strip almost last");
 
-        let mut interpreted_tokens = self.compile_token_vector(&tvi)?;
-        interpreted_tokens.push(Opcode::RET);
-        println!("compile token vector strip last");
-
-        return Ok(interpreted_tokens);
+        return Ok(tvi);
     }
 
     fn compile_token_vector(&mut self, token_vector: &[Token]) -> Result<Vec<Opcode>, ForthError> {

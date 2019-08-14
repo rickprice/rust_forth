@@ -124,13 +124,19 @@ impl ForthCompiler {
                     println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
-                            // We end before the current token
-                            // Compile whatever appeared before this compile statement
-                            tvi.append(
-                                &mut self.compile_token_vector(
+                            if i > starting_position {
+                                println!("value of starting position is: {}", starting_position);
+                                println!("i is: {}", i);
+                                println!(
+                                    "Will try to compile this {:?}",
+                                    &token_vector[starting_position..i - 1]
+                                );
+                                // We end before the current token
+                                // Compile whatever appeared before this compile statement
+                                tvi.append(&mut self.compile_token_vector(
                                     &token_vector[starting_position..i - 1],
-                                )?,
-                            );
+                                )?);
+                            }
                             // Start compiling after this token
                             starting_position = i + 1;
                             mode = Mode::Compiling(String::from(s));

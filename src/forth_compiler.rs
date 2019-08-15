@@ -121,15 +121,15 @@ impl ForthCompiler {
         for i in 0..token_vector.len() {
             match &token_vector[i] {
                 Token::Colon(s) => {
-                    println!("Colon, starting compiling");
+                    //println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
                             // Make sure there is something to compile...
-                            if i > starting_position + 1 {
+                            if i > starting_position {
                                 let to_compile = &token_vector[starting_position..i];
-                                println!("value of starting position is: {}", starting_position);
-                                println!("i is: {}", i);
-                                println!("Colon - Will try to compile this {:?}", to_compile);
+                                //println!("value of starting position is: {}", starting_position);
+                                //println!("i is: {}", i);
+                                //println!("Colon - Will try to compile this {:?}", to_compile);
                                 // We end before the current token
                                 // Compile whatever appeared before this compile statement
                                 tvi.append(&mut self.compile_token_vector(to_compile)?);
@@ -161,9 +161,9 @@ impl ForthCompiler {
                             // Get the compiled assembler from the token vector
                             // stop compiling before the ending token
                             let to_compile = &token_vector[starting_position..i];
-                            println!("value of starting position is: {}", starting_position);
-                            println!("i is: {}", i);
-                            println!("Semicolon - Will try to compile this {:?}", to_compile);
+                            //println!("value of starting position is: {}", starting_position);
+                            //println!("i is: {}", i);
+                            //println!("Semicolon - Will try to compile this {:?}", to_compile);
                             // We end before the current token
                             let mut compiled = self.compile_token_vector(to_compile)?;
                             // Put the return code onto the end
@@ -180,9 +180,9 @@ impl ForthCompiler {
                             starting_position = i + 1;
                             // Switch back to interpreting mode
                             mode = Mode::Interpreting;
-                            println!("Token Memory {:?}", self.sm.st.opcodes);
-                            println!("Word Addresses {:?}", self.word_addresses);
-                            println!("Last function {}", self.last_function);
+                            //println!("Token Memory {:?}", self.sm.st.opcodes);
+                            //println!("Word Addresses {:?}", self.word_addresses);
+                            //println!("Last function {}", self.last_function);
                         }
                     }
                 }
@@ -195,14 +195,14 @@ impl ForthCompiler {
         }
 
         let to_compile = &token_vector[starting_position..];
-        println!("value of starting position is: {}", starting_position);
-        println!("Last - Will try to compile this {:?}", to_compile);
+        //println!("value of starting position is: {}", starting_position);
+        //println!("Last - Will try to compile this {:?}", to_compile);
         // We end before the current token
         let mut compiled = self.compile_token_vector(to_compile)?;
         tvi.append(&mut compiled);
         tvi.push(Opcode::RET);
 
-        println!("compile token vector strip almost last");
+        //println!("Immediate Compiled codes {:?}", tvi);
 
         return Ok(tvi);
     }
@@ -318,8 +318,8 @@ impl ForthCompiler {
             }
         }
 
-        println!("Compiled Codes {:?}", tv);
-        println!("Total size of Codes {:?}", tv.len());
+        //println!("Compiled Codes {:?}", tv);
+        //println!("Total size of Codes {:?}", tv.len());
         return Ok(tv);
     }
 

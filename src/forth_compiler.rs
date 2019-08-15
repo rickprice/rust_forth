@@ -114,10 +114,10 @@ impl ForthCompiler {
         let mut mode = Mode::Interpreting;
         let mut starting_position = 0;
 
-        println!(
-            "compile_token_vector_strip_word_definitions Compiling Forth tokens {:?}",
-            token_vector
-        );
+        //println!(
+        //    "compile_token_vector_strip_word_definitions Compiling Forth tokens {:?}",
+        //    token_vector
+        //);
         for i in 0..token_vector.len() {
             match &token_vector[i] {
                 Token::Colon(s) => {
@@ -146,7 +146,7 @@ impl ForthCompiler {
                     }
                 }
                 Token::SemiColon => {
-                    println!("Semicolon, finishing compiling");
+                    //println!("Semicolon, finishing compiling");
                     match mode {
                         Mode::Interpreting => {
                             return Err(ForthError::InvalidSyntax(
@@ -211,10 +211,10 @@ impl ForthCompiler {
         let mut deferred_if_statements = Vec::new();
         let mut tv: Vec<Opcode> = Vec::new();
 
-        println!(
-            "compile_token_vector compiling Forth tokens {:?}",
-            token_vector
-        );
+        //println!(
+        //    "compile_token_vector compiling Forth tokens {:?}",
+        //    token_vector
+        //);
 
         for t in token_vector.iter() {
             match t {
@@ -329,7 +329,7 @@ impl ForthCompiler {
         gas_limit: GasLimit,
     ) -> Result<(), ForthError> {
         let mut ol = self.compile_token_vector_strip_word_definitions(token_vector)?;
-        println!("Compiled Opcodes: {:?}", ol);
+        //println!("Compiled Opcodes: {:?}", ol);
         self.sm.st.opcodes.resize(self.last_function, Opcode::NOP);
         self.sm.st.opcodes.append(&mut ol);
         self.sm.execute(self.last_function, gas_limit)?;
@@ -400,6 +400,82 @@ mod tests {
 
         assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
     }
+
+    #[test]
+    fn test_compile_3() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string(
+            "2 2 SUB POP : RickTest 123 321 ADD 2 MUL ; RickTest : RickTestB 123 321 ADD 2 MUL ; 3 3 SUB POP",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64]);
+
+        fc.execute_string("123 321 ADD 2 MUL RickTest", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![888_i64, 888, 888]);
+    }
+
+    #[test]
+    fn test_compile_4() {
+        let mut fc = ForthCompiler::new();
+
+        fc.execute_string(
+            "2 2 SUB POP : RickTest 123 321 ADD 2 MUL ; : RickTestB 123 321 ADD 2 MUL ; 3 3 SUB",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![0_i64]);
+
+        fc.execute_string("123 321 ADD 2 MUL RickTest", GasLimit::Limited(100))
+            .unwrap();
+
+        assert_eq!(&fc.sm.st.number_stack, &vec![0_i64, 888, 888]);
+    }
+
+    #[test]
+    fn test_compile_fail_1() {
+        let mut fc = ForthCompiler::new();
+
+        match fc.execute_string(
+            "2 2 SUB POP : RickTest 123 321 ADD 2 MUL ; : : RickTestB 123 321 ADD 2 MUL ; 3 3 SUB",
+            GasLimit::Limited(100),
+        ) {
+            Err(ForthError::UnknownToken(ref x)) if x == "RickTestB" => (),
+            r => panic!("Incorrect error type returned {:?}", r),
+        }
+    }
+
+    #[test]
+    fn test_compile_fail_2() {
+        let mut fc = ForthCompiler::new();
+
+        match fc.execute_string(
+            "2 2 SUB POP : RickTest 123 321 ADD 2 MUL ; ; : RickTestB 123 321 ADD 2 MUL ; 3 3 SUB",
+            GasLimit::Limited(100),
+        ) {
+            Err(ForthError::InvalidSyntax(_)) => (),
+            r => panic!("Incorrect error type returned {:?}", r),
+        }
+    }
+
+    #[test]
+    fn test_compile_fail_3() {
+        let mut fc = ForthCompiler::new();
+
+        match fc.execute_string(
+            "2 2 SUB POP : RickTest 123 321 ADD 2 MUL ; : RickTestB 123 321 ADD 2 MUL ; : ERROR 3 3 SUB",
+            GasLimit::Limited(100),
+        ) {
+            Err(ForthError::MissingSemicolonAfterColon) => (),
+            r => panic!("Incorrect error type returned {:?}", r),
+        }
+    }
+
     #[test]
     fn test_if_else_1() {
         let mut fc = ForthCompiler::new();

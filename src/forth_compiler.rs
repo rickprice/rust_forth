@@ -108,7 +108,7 @@ impl ForthCompiler {
 
     fn compile_token_vector_strip_word_definitions(
         &mut self,
-        token_vector: &Vec<Token>,
+        token_vector: &[Token],
     ) -> Result<Vec<Opcode>, ForthError> {
         let mut tvi = Vec::new();
         let mut mode = Mode::Interpreting;
@@ -325,7 +325,7 @@ impl ForthCompiler {
 
     fn execute_token_vector(
         &mut self,
-        token_vector: &Vec<Token>,
+        token_vector:  &[Token],
         gas_limit: GasLimit,
     ) -> Result<(), ForthError> {
         let mut ol = self.compile_token_vector_strip_word_definitions(token_vector)?;

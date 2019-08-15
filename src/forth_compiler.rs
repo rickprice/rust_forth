@@ -17,6 +17,7 @@ pub enum Token {
     Error(String),
 }
 
+// This macro lets you statically initialize a hashmap
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = ::std::collections::HashMap::new();
@@ -325,7 +326,7 @@ impl ForthCompiler {
 
     fn execute_token_vector(
         &mut self,
-        token_vector:  &[Token],
+        token_vector: &[Token],
         gas_limit: GasLimit,
     ) -> Result<(), ForthError> {
         let mut ol = self.compile_token_vector_strip_word_definitions(token_vector)?;

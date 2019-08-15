@@ -124,20 +124,17 @@ impl ForthCompiler {
                     println!("Colon, starting compiling");
                     match mode {
                         Mode::Interpreting => {
-                            if i > starting_position {
+                            // Make sure there is something to compile...
+                            if i > starting_position + 1 {
+                                let to_compile = &token_vector[starting_position..i];
                                 println!("value of starting position is: {}", starting_position);
                                 println!("i is: {}", i);
-                                println!(
-                                    "Will try to compile this {:?}",
-                                    &token_vector[starting_position..i - 1]
-                                );
+                                println!("Colon - Will try to compile this {:?}", to_compile);
                                 // We end before the current token
                                 // Compile whatever appeared before this compile statement
-                                tvi.append(&mut self.compile_token_vector(
-                                    &token_vector[starting_position..i - 1],
-                                )?);
+                                tvi.append(&mut self.compile_token_vector(to_compile)?);
                             }
-                            // Start compiling after this token
+                            // Start compiling again after this token
                             starting_position = i + 1;
                             mode = Mode::Compiling(String::from(s));
                         }
@@ -163,8 +160,12 @@ impl ForthCompiler {
 
                             // Get the compiled assembler from the token vector
                             // stop compiling before the ending token
-                            let mut compiled =
-                                self.compile_token_vector(&token_vector[starting_position..i - 1])?;
+                            let to_compile = &token_vector[starting_position..i];
+                            println!("value of starting position is: {}", starting_position);
+                            println!("i is: {}", i);
+                            println!("Semicolon - Will try to compile this {:?}", to_compile);
+                            // We end before the current token
+                            let mut compiled = self.compile_token_vector(to_compile)?;
                             // Put the return code onto the end
                             compiled.push(Opcode::RET);
                             // The current function start is the end of the last function
@@ -193,7 +194,12 @@ impl ForthCompiler {
             return Err(ForthError::MissingSemicolonAfterColon);
         }
 
-        tvi.append(&mut self.compile_token_vector(&token_vector[starting_position..])?);
+        let to_compile = &token_vector[starting_position..];
+        println!("value of starting position is: {}", starting_position);
+        println!("Last - Will try to compile this {:?}", to_compile);
+        // We end before the current token
+        let mut compiled = self.compile_token_vector(to_compile)?;
+        tvi.append(&mut compiled);
         tvi.push(Opcode::RET);
 
         println!("compile token vector strip almost last");

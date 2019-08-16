@@ -6,11 +6,6 @@ pub enum GasLimit {
     Limited(u64),
 }
 
-pub enum TrapHandled {
-    Handled,
-    NotHandled,
-}
-
 #[derive(Debug)]
 pub enum StackMachineError {
     UnkownError,
@@ -27,10 +22,54 @@ impl From<option::NoneError> for StackMachineError {
     }
 }
 
+pub enum TrapHandled {
+    Handled,
+    NotHandled,
+}
+
+struct HasAClosure<'a> {
+    closure: Box<dyn Fn(f64) -> f64 + 'a>,
+}
+
+impl<'a> HasAClosure<'a> {
+    fn new<C>(f: C) -> HasAClosure<'a>
+    where
+        C: Fn(f64) -> f64 + 'a,
+    {
+        HasAClosure {
+            closure: Box::new(f),
+        }
+    }
+}
+
 // Chain of Command Pattern
 pub trait HandleTrap {
     fn handle_trap(&mut self, st: &mut StackMachineState)
         -> Result<TrapHandled, StackMachineError>;
+}
+
+struct TrapHandler {
+    handled_trap: i64,
+    to_run: dyn Fn(i64) -> Result<TrapHandled, StackMachineError>,
+}
+/* does not compile yet...
+impl TrapHandler {
+        pub fn new<F>(handled_trap: i64,to_run : F) -> Box<TrapHandler>
+        where F : Fn(i64) -> Result<TrapHandled, StackMachineError>
+        {
+            Box::from(TrapHandler {handled_trap,to_run})
+        }
+}
+*/
+impl HandleTrap for TrapHandler {
+    fn handle_trap(
+        &mut self,
+        st: &mut StackMachineState,
+    ) -> Result<TrapHandled, StackMachineError> {
+        st.number_stack.pop()?;
+        st.number_stack.push(200);
+        Ok(TrapHandled::Handled)
+    }
 }
 
 #[derive(Debug, Clone)]

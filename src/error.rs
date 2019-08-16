@@ -31,7 +31,7 @@ impl From<StackMachineError> for ForthError {
             StackMachineError::NoneError => ForthError::NoneError,
             StackMachineError::NumberStackUnderflow => ForthError::PopOfEmptyStack,
             StackMachineError::UnkownError => ForthError::UnknownError,
-            StackMachineError::UnhandledTrap=>ForthError::UnhandledTrap,
+            StackMachineError::UnhandledTrap => ForthError::UnhandledTrap,
             StackMachineError::RanOutOfGas => ForthError::RanOutOfGas,
         }
     }

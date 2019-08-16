@@ -11,6 +11,7 @@ pub enum ForthError {
     InvalidSyntax(String),
     MissingSemicolonAfterColon,
     Io(std::io::Error),
+    UnhandledTrap,
     RanOutOfGas,
 }
 
@@ -30,6 +31,7 @@ impl From<StackMachineError> for ForthError {
             StackMachineError::NoneError => ForthError::NoneError,
             StackMachineError::NumberStackUnderflow => ForthError::PopOfEmptyStack,
             StackMachineError::UnkownError => ForthError::UnknownError,
+            StackMachineError::UnhandledTrap=>ForthError::UnhandledTrap,
             StackMachineError::RanOutOfGas => ForthError::RanOutOfGas,
         }
     }
@@ -45,8 +47,9 @@ impl From<ForthError> for i32 {
             ForthError::InvalidSyntax(_) => 5,
             ForthError::MissingSemicolonAfterColon => 6,
             ForthError::Io(_) => 7,
-            ForthError::NoneError => 8,
-            ForthError::RanOutOfGas => 9,
+            ForthError::UnhandledTrap => 8,
+            ForthError::NoneError => 9,
+            ForthError::RanOutOfGas => 10,
         }
     }
 }

@@ -16,6 +16,7 @@ pub enum StackMachineError {
     UnkownError,
     NoneError,
     NumberStackUnderflow,
+    UnhandledTrap,
     RanOutOfGas,
 }
 
@@ -199,9 +200,10 @@ impl StackMachine {
                 Opcode::TRAP => {
                     for h in self.trap_handlers.iter_mut() {
                         if let TrapHandled::Handled = h.handle_trap(&mut self.st).ok()? {
-                            break;
+                            return Ok(());
                         }
                     }
+                    return Err(StackMachineError::UnhandledTrap);
                 }
                 Opcode::NOP => {}
             };
@@ -825,5 +827,21 @@ mod tests {
         sm.execute(0, GasLimit::Limited(100)).unwrap();
 
         assert_eq!(sm.st.number_stack, vec![200]);
+    }
+
+    #[test]
+    fn test_handle_trap_3() {
+        let mut sm = StackMachine::new();
+
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::TRAP, Opcode::RET]);
+
+        // Execute the instructions
+        match sm.execute(0, GasLimit::Limited(100)) {
+            Err(StackMachineError::UnhandledTrap) => (),
+            r => panic!("Incorrect error type returned {:?}", r),
+        }
     }
 }

@@ -830,7 +830,7 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_trap_3() {
+    fn test_unhandled_trap_1() {
         let mut sm = StackMachine::new();
 
         // Put the opcodes into the *memory*

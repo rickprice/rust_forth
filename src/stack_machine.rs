@@ -48,27 +48,31 @@ pub trait HandleTrap {
         -> Result<TrapHandled, StackMachineError>;
 }
 
-struct TrapHandler {
+struct TrapHandler<'a> {
     handled_trap: i64,
-    to_run: dyn Fn(i64) -> Result<TrapHandled, StackMachineError>,
+    to_run:  Box<dyn Fn(i64) -> Result<TrapHandled, StackMachineError> + 'a>,
 }
-/* does not compile yet...
-impl TrapHandler {
-        pub fn new<F>(handled_trap: i64,to_run : F) -> Box<TrapHandler>
-        where F : Fn(i64) -> Result<TrapHandled, StackMachineError>
+
+impl<'a> TrapHandler<'a> {
+        pub fn new<C>(handled_trap: i64,f: C) -> TrapHandler<'a>
+        where C : Fn(i64) -> Result<TrapHandled, StackMachineError> + 'a,
         {
-            Box::from(TrapHandler {handled_trap,to_run})
+            TrapHandler {handled_trap:handled_trap,to_run:Box::new(f)}
         }
 }
-*/
-impl HandleTrap for TrapHandler {
+
+impl<'a> HandleTrap for TrapHandler<'a> {
     fn handle_trap(
         &mut self,
         st: &mut StackMachineState,
     ) -> Result<TrapHandled, StackMachineError> {
-        st.number_stack.pop()?;
-        st.number_stack.push(200);
-        Ok(TrapHandled::Handled)
+        if let Some(x) = st.number_stack.last() {
+            if *x == self.handled_trap {
+                self.to_run(st)
+            }
+            st.number_stack.pop()?;
+        }
+        Ok(TrapHandled::NotHandled)
     }
 }
 

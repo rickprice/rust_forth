@@ -730,4 +730,100 @@ mod tests {
         // Execute the instructions
         sm.execute(0, GasLimit::Limited(10)).unwrap();
     }
+
+    #[test]
+    fn test_handle_trap_1() {
+        struct TrapHandler {}
+
+        impl TrapHandler {
+            pub fn new() -> TrapHandler {
+                TrapHandler {}
+            }
+        }
+
+        impl HandleTrap for TrapHandler {
+            fn handle_trap(
+                &mut self,
+                st: &mut StackMachineState,
+            ) -> Result<TrapHandled, StackMachineError> {
+                st.number_stack.pop()?;
+                st.number_stack.push(200);
+                Ok(TrapHandled::Handled)
+            }
+        }
+
+        let mut sm = StackMachine::new();
+
+        sm.trap_handlers.push(Box::from(TrapHandler::new()));
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[100]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::TRAP, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![200]);
+    }
+
+    #[test]
+    fn test_handle_trap_2() {
+        struct TrapHandlerDontHandle {}
+
+        impl TrapHandlerDontHandle {
+            pub fn new() -> TrapHandlerDontHandle {
+                TrapHandlerDontHandle {}
+            }
+        }
+
+        impl HandleTrap for TrapHandlerDontHandle {
+            fn handle_trap(
+                &mut self,
+                _st: &mut StackMachineState,
+            ) -> Result<TrapHandled, StackMachineError> {
+                Ok(TrapHandled::NotHandled)
+            }
+        }
+        struct TrapHandler {}
+
+        impl TrapHandler {
+            pub fn new() -> TrapHandler {
+                TrapHandler {}
+            }
+        }
+
+        impl HandleTrap for TrapHandler {
+            fn handle_trap(
+                &mut self,
+                st: &mut StackMachineState,
+            ) -> Result<TrapHandled, StackMachineError> {
+                st.number_stack.pop()?;
+                st.number_stack.push(200);
+                Ok(TrapHandled::Handled)
+            }
+        }
+
+        let mut sm = StackMachine::new();
+
+        sm.trap_handlers
+            .push(Box::from(TrapHandlerDontHandle::new()));
+        sm.trap_handlers.push(Box::from(TrapHandler::new()));
+        sm.trap_handlers
+            .push(Box::from(TrapHandlerDontHandle::new()));
+
+        // Populate the number stack
+        sm.st.number_stack.extend_from_slice(&[100]);
+        // Put the opcodes into the *memory*
+        sm.st
+            .opcodes
+            .extend_from_slice(&[Opcode::TRAP, Opcode::RET]);
+
+        // Execute the instructions
+        sm.execute(0, GasLimit::Limited(100)).unwrap();
+
+        assert_eq!(sm.st.number_stack, vec![200]);
+    }
 }

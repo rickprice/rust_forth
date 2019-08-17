@@ -27,21 +27,6 @@ pub enum TrapHandled {
     NotHandled,
 }
 
-struct HasAClosure<'a> {
-    closure: Box<dyn Fn(f64) -> f64 + 'a>,
-}
-
-impl<'a> HasAClosure<'a> {
-    fn new<C>(f: C) -> HasAClosure<'a>
-    where
-        C: Fn(f64) -> f64 + 'a,
-    {
-        HasAClosure {
-            closure: Box::new(f),
-        }
-    }
-}
-
 // Chain of Command Pattern
 pub trait HandleTrap {
     fn handle_trap(
@@ -51,7 +36,7 @@ pub trait HandleTrap {
     ) -> Result<TrapHandled, StackMachineError>;
 }
 
-struct TrapHandler<'a> {
+pub struct TrapHandler<'a> {
     handled_trap: i64,
     to_run: Box<dyn Fn(i64, &mut StackMachineState) -> Result<TrapHandled, StackMachineError> + 'a>,
 }
@@ -785,32 +770,17 @@ mod tests {
 
     #[test]
     fn test_handle_trap_1() {
-        struct TrapHandler {}
+        let mut sm = StackMachine::new();
 
-        impl TrapHandler {
-            pub fn new() -> TrapHandler {
-                TrapHandler {}
-            }
-        }
-
-        impl HandleTrap for TrapHandler {
-            fn handle_trap(
-                &mut self,
-                _trap_number: i64,
-                st: &mut StackMachineState,
-            ) -> Result<TrapHandled, StackMachineError> {
+        sm.trap_handlers
+            .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
                 st.number_stack.pop()?;
                 st.number_stack.push(200);
                 Ok(TrapHandled::Handled)
-            }
-        }
-
-        let mut sm = StackMachine::new();
-
-        sm.trap_handlers.push(Box::from(TrapHandler::new()));
+            })));
 
         // Populate the number stack
-        sm.st.number_stack.extend_from_slice(&[100]);
+        sm.st.number_stack.extend_from_slice(&[50_i64, 100]);
         // Put the opcodes into the *memory*
         sm.st
             .opcodes
@@ -824,26 +794,14 @@ mod tests {
 
     #[test]
     fn test_handle_trap_2() {
-        struct TrapHandlerDontHandle {}
-
-        impl TrapHandlerDontHandle {
-            pub fn new() -> TrapHandlerDontHandle {
-                TrapHandlerDontHandle {}
-            }
-        }
-
-        impl HandleTrap for TrapHandlerDontHandle {
-            fn handle_trap(
-                &mut self,
-                _trap_id: i64,
-                _st: &mut StackMachineState,
-            ) -> Result<TrapHandled, StackMachineError> {
-                Ok(TrapHandled::NotHandled)
-            }
-        }
-
         let mut sm = StackMachine::new();
 
+        sm.trap_handlers
+            .push(Box::from(TrapHandler::new(-100, |_trap_id, st| {
+                st.number_stack.pop()?;
+                st.number_stack.push(-100);
+                Ok(TrapHandled::Handled)
+            })));
         sm.trap_handlers
             .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
                 st.number_stack.pop()?;
@@ -851,9 +809,11 @@ mod tests {
                 Ok(TrapHandled::Handled)
             })));
         sm.trap_handlers
-            .push(Box::from(TrapHandlerDontHandle::new()));
-        sm.trap_handlers
-            .push(Box::from(TrapHandlerDontHandle::new()));
+            .push(Box::from(TrapHandler::new(-200, |_trap_id, st| {
+                st.number_stack.pop()?;
+                st.number_stack.push(-200);
+                Ok(TrapHandled::Handled)
+            })));
 
         // Populate the number stack, with a value (50), and the trap number (100)
         sm.st.number_stack.extend_from_slice(&[50_i64, 100]);
@@ -871,6 +831,9 @@ mod tests {
     #[test]
     fn test_unhandled_trap_1() {
         let mut sm = StackMachine::new();
+
+        // Populate the number stack, with a value (50), and the trap number (100)
+        sm.st.number_stack.extend_from_slice(&[50_i64, 100]);
 
         // Put the opcodes into the *memory*
         sm.st

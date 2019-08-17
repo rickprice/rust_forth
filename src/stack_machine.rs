@@ -50,15 +50,19 @@ pub trait HandleTrap {
 
 struct TrapHandler<'a> {
     handled_trap: i64,
-    to_run:  Box<dyn Fn(i64) -> Result<TrapHandled, StackMachineError> + 'a>,
+    to_run: Box<dyn Fn(i64, &mut StackMachineState) -> Result<TrapHandled, StackMachineError> + 'a>,
 }
 
 impl<'a> TrapHandler<'a> {
-        pub fn new<C>(handled_trap: i64,f: C) -> TrapHandler<'a>
-        where C : Fn(i64) -> Result<TrapHandled, StackMachineError> + 'a,
-        {
-            TrapHandler {handled_trap:handled_trap,to_run:Box::new(f)}
+    pub fn new<C>(handled_trap: i64, f: C) -> TrapHandler<'a>
+    where
+        C: Fn(i64, &mut StackMachineState) -> Result<TrapHandled, StackMachineError> + 'a,
+    {
+        TrapHandler {
+            handled_trap: handled_trap,
+            to_run: Box::new(f),
         }
+    }
 }
 
 impl<'a> HandleTrap for TrapHandler<'a> {
@@ -68,7 +72,7 @@ impl<'a> HandleTrap for TrapHandler<'a> {
     ) -> Result<TrapHandled, StackMachineError> {
         if let Some(x) = st.number_stack.last() {
             if *x == self.handled_trap {
-                self.to_run(st)
+                return (self.to_run)(self.handled_trap, st);
             }
             st.number_stack.pop()?;
         }
@@ -832,30 +836,15 @@ mod tests {
                 Ok(TrapHandled::NotHandled)
             }
         }
-        struct TrapHandler {}
-
-        impl TrapHandler {
-            pub fn new() -> TrapHandler {
-                TrapHandler {}
-            }
-        }
-
-        impl HandleTrap for TrapHandler {
-            fn handle_trap(
-                &mut self,
-                st: &mut StackMachineState,
-            ) -> Result<TrapHandled, StackMachineError> {
-                st.number_stack.pop()?;
-                st.number_stack.push(200);
-                Ok(TrapHandled::Handled)
-            }
-        }
 
         let mut sm = StackMachine::new();
 
         sm.trap_handlers
+            .push(Box::from(TrapHandler::new(100, |x, st| {
+                Ok(TrapHandled::Handled)
+            })));
+        sm.trap_handlers
             .push(Box::from(TrapHandlerDontHandle::new()));
-        sm.trap_handlers.push(Box::from(TrapHandler::new()));
         sm.trap_handlers
             .push(Box::from(TrapHandlerDontHandle::new()));
 

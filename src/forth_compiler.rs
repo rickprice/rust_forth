@@ -595,7 +595,62 @@ mod tests {
         fc.execute_string(": IO_IN 101 TRAP ; 1000 IO_IN", GasLimit::Limited(100))
             .unwrap();
 
+        // Value from IO port on stack
+        assert_eq!(&fc.sm.st.number_stack, &vec![654321]);
+    }
+
+    #[test]
+    fn test_trap_3() {
+        let mut fc = ForthCompiler::new();
+
+        // Simulate a IO OUT command, at TRAP(100), but define the port number inside a Forth Word as well
+        fc.sm
+            .trap_handlers
+            .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
+                let io_port = st.number_stack.pop()?;
+                let io_value = st.number_stack.pop()?;
+                println!(
+                    "Simulated IO OUT command to Port: {} and Value: {}",
+                    io_port, io_value
+                );
+                Ok(TrapHandled::Handled)
+            })));
+
+        fc.execute_string(
+            ": IO_OUT 100 TRAP ; : OUT_DISPLAY 1000 IO_OUT ; 123456 OUT_DISPLAY",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
         // Nothing left over
+        assert_eq!(&fc.sm.st.number_stack, &vec![]);
+    }
+
+    #[test]
+    fn test_trap_4() {
+        let mut fc = ForthCompiler::new();
+
+        // Simulate a IO IN command, at TRAP(101), but define the port number inside a Forth word as well
+        fc.sm
+            .trap_handlers
+            .push(Box::from(TrapHandler::new(101, |_trap_id, st| {
+                let io_port = st.number_stack.pop()?;
+                let io_value = 654321_i64;
+                println!(
+                    "Simulated IO IN command from Port: {} and Value: {}",
+                    io_port, io_value
+                );
+                st.number_stack.push(io_value);
+                Ok(TrapHandled::Handled)
+            })));
+
+        fc.execute_string(
+            ": IO_IN 101 TRAP ; : IN_KEYBOARD 1000 IO_IN ; IN_KEYBOARD",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        // Value from IO port on stack
         assert_eq!(&fc.sm.st.number_stack, &vec![654321]);
     }
 }

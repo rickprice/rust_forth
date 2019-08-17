@@ -6,6 +6,10 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
+pub use super::stack_machine::HandleTrap;
+pub use super::stack_machine::TrapHandled;
+pub use super::stack_machine::TrapHandler;
+
 /// This Enum lists the token types that are used by the Forth interpreter
 #[derive(Debug)]
 pub enum Token {
@@ -541,5 +545,57 @@ mod tests {
             .unwrap();
 
         assert_eq!(&fc.sm.st.number_stack, &vec![7_i64]);
+    }
+
+    #[test]
+    fn test_trap_1() {
+        let mut fc = ForthCompiler::new();
+
+        // Simulate a IO OUT command, at TRAP(100)
+        fc.sm
+            .trap_handlers
+            .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
+                let io_port = st.number_stack.pop()?;
+                let io_value = st.number_stack.pop()?;
+                println!(
+                    "Simulated IO OUT command to Port: {} and Value: {}",
+                    io_port, io_value
+                );
+                Ok(TrapHandled::Handled)
+            })));
+
+        fc.execute_string(
+            ": IO_OUT 100 TRAP ; 123456 1000 IO_OUT",
+            GasLimit::Limited(100),
+        )
+        .unwrap();
+
+        // Nothing left over
+        assert_eq!(&fc.sm.st.number_stack, &vec![]);
+    }
+
+    #[test]
+    fn test_trap_2() {
+        let mut fc = ForthCompiler::new();
+
+        // Simulate a IO IN command, at TRAP(101)
+        fc.sm
+            .trap_handlers
+            .push(Box::from(TrapHandler::new(101, |_trap_id, st| {
+                let io_port = st.number_stack.pop()?;
+                let io_value = 654321_i64;
+                println!(
+                    "Simulated IO IN command from Port: {} and Value: {}",
+                    io_port, io_value
+                );
+                st.number_stack.push(io_value);
+                Ok(TrapHandled::Handled)
+            })));
+
+        fc.execute_string(": IO_IN 101 TRAP ; 1000 IO_IN", GasLimit::Limited(100))
+            .unwrap();
+
+        // Nothing left over
+        assert_eq!(&fc.sm.st.number_stack, &vec![654321]);
     }
 }

@@ -44,8 +44,11 @@ impl<'a> HasAClosure<'a> {
 
 // Chain of Command Pattern
 pub trait HandleTrap {
-    fn handle_trap(&mut self, st: &mut StackMachineState)
-        -> Result<TrapHandled, StackMachineError>;
+    fn handle_trap(
+        &mut self,
+        trap_id: i64,
+        st: &mut StackMachineState,
+    ) -> Result<TrapHandled, StackMachineError>;
 }
 
 struct TrapHandler<'a> {
@@ -68,13 +71,11 @@ impl<'a> TrapHandler<'a> {
 impl<'a> HandleTrap for TrapHandler<'a> {
     fn handle_trap(
         &mut self,
+        trap_number: i64,
         st: &mut StackMachineState,
     ) -> Result<TrapHandled, StackMachineError> {
-        if let Some(x) = st.number_stack.last() {
-            if *x == self.handled_trap {
-                return (self.to_run)(self.handled_trap, st);
-            }
-            st.number_stack.pop()?;
+        if trap_number == self.handled_trap {
+            return (self.to_run)(self.handled_trap, st);
         }
         Ok(TrapHandled::NotHandled)
     }
@@ -245,8 +246,10 @@ impl StackMachine {
                     self.st.number_stack.push(y);
                 }
                 Opcode::TRAP => {
+                    // We are going to say that TRAPs always have a numeric code on the number stack to define which TRAP is being called
+                    let trap_id = self.st.number_stack.pop()?;
                     for h in self.trap_handlers.iter_mut() {
-                        if let TrapHandled::Handled = h.handle_trap(&mut self.st).ok()? {
+                        if let TrapHandled::Handled = h.handle_trap(trap_id, &mut self.st).ok()? {
                             return Ok(());
                         }
                     }
@@ -793,6 +796,7 @@ mod tests {
         impl HandleTrap for TrapHandler {
             fn handle_trap(
                 &mut self,
+                _trap_number: i64,
                 st: &mut StackMachineState,
             ) -> Result<TrapHandled, StackMachineError> {
                 st.number_stack.pop()?;
@@ -831,6 +835,7 @@ mod tests {
         impl HandleTrap for TrapHandlerDontHandle {
             fn handle_trap(
                 &mut self,
+                _trap_id: i64,
                 _st: &mut StackMachineState,
             ) -> Result<TrapHandled, StackMachineError> {
                 Ok(TrapHandled::NotHandled)
@@ -840,7 +845,9 @@ mod tests {
         let mut sm = StackMachine::new();
 
         sm.trap_handlers
-            .push(Box::from(TrapHandler::new(100, |x, st| {
+            .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
+                st.number_stack.pop()?;
+                st.number_stack.push(200);
                 Ok(TrapHandled::Handled)
             })));
         sm.trap_handlers
@@ -848,8 +855,8 @@ mod tests {
         sm.trap_handlers
             .push(Box::from(TrapHandlerDontHandle::new()));
 
-        // Populate the number stack
-        sm.st.number_stack.extend_from_slice(&[100]);
+        // Populate the number stack, with a value (50), and the trap number (100)
+        sm.st.number_stack.extend_from_slice(&[50_i64, 100]);
         // Put the opcodes into the *memory*
         sm.st
             .opcodes

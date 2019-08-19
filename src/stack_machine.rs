@@ -1,5 +1,4 @@
 use std::convert::TryFrom;
-use std::option;
 
 pub enum GasLimit {
     Unlimited,
@@ -14,14 +13,14 @@ pub enum StackMachineError {
     UnhandledTrap,
     RanOutOfGas,
 }
-
+/*
 /// Helper to convert a Some/None return to a ForthError error code.
 impl From<option::NoneError> for StackMachineError {
     fn from(_: option::NoneError) -> Self {
         StackMachineError::NoneError
     }
 }
-
+*/
 pub enum TrapHandled {
     Handled,
     NotHandled,
@@ -139,21 +138,40 @@ impl StackMachine {
             let mut pc_reset = false;
             match self.st.opcodes[self.st.pc] {
                 Opcode::JMP => {
-                    self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?;
+                    self.st.pc = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .map(|x| x as usize)
+                        .ok_or(StackMachineError::NoneError)?;
                     pc_reset = true;
                 }
                 Opcode::JR => {
-                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
+                    let new_offset = self.st.pc as i128
+                        + self
+                            .st
+                            .number_stack
+                            .pop()
+                            .ok_or(StackMachineError::NoneError)? as i128;
                     self.st.pc = usize::try_from(new_offset).unwrap();
                     pc_reset = true;
                 }
                 Opcode::CALL => {
                     self.st.return_stack.push(self.st.pc + 1);
-                    self.st.pc = self.st.number_stack.pop().map(|x| x as usize)?;
+                    self.st.pc = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .map(|x| x as usize)
+                        .ok_or(StackMachineError::NoneError)?;
                     pc_reset = true;
                 }
                 Opcode::CMPZ => {
-                    let x = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     if x == 0 {
                         self.st.number_stack.push(0);
                     } else {
@@ -161,7 +179,11 @@ impl StackMachine {
                     }
                 }
                 Opcode::CMPNZ => {
-                    let x = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     if x == 0 {
                         self.st.number_stack.push(-1);
                     } else {
@@ -169,16 +191,34 @@ impl StackMachine {
                     }
                 }
                 Opcode::JRZ => {
-                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
-                    let x = self.st.number_stack.pop()?;
+                    let new_offset = self.st.pc as i128
+                        + self
+                            .st
+                            .number_stack
+                            .pop()
+                            .ok_or(StackMachineError::NoneError)? as i128;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     if x == 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
                     }
                 }
                 Opcode::JRNZ => {
-                    let new_offset = self.st.pc as i128 + self.st.number_stack.pop()? as i128;
-                    let x = self.st.number_stack.pop()?;
+                    let new_offset = self.st.pc as i128
+                        + self
+                            .st
+                            .number_stack
+                            .pop()
+                            .ok_or(StackMachineError::NoneError)? as i128;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     if x != 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
@@ -186,7 +226,11 @@ impl StackMachine {
                 }
                 Opcode::LDI(x) => self.st.number_stack.push(x),
                 Opcode::POP => {
-                    let _ = self.st.number_stack.pop()?;
+                    let _ = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                 }
                 Opcode::RET => {
                     match self.st.return_stack.pop() {
@@ -196,45 +240,97 @@ impl StackMachine {
                     pc_reset = true;
                 }
                 Opcode::ADD => {
-                    let x = self.st.number_stack.pop()?;
-                    let y = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
+                    let y = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x + y);
                 }
                 Opcode::SUB => {
-                    let x = self.st.number_stack.pop()?;
-                    let y = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
+                    let y = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x - y);
                 }
                 Opcode::MUL => {
-                    let x = self.st.number_stack.pop()?;
-                    let y = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
+                    let y = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x * y);
                 }
                 Opcode::DIV => {
-                    let x = self.st.number_stack.pop()?;
-                    let y = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
+                    let y = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x / y);
                 }
                 Opcode::NOT => {
-                    let x = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(!x);
                 }
                 Opcode::DUP => {
-                    let x = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x);
                     self.st.number_stack.push(x);
                 }
                 Opcode::SWAP => {
-                    let x = self.st.number_stack.pop()?;
-                    let y = self.st.number_stack.pop()?;
+                    let x = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
+                    let y = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     self.st.number_stack.push(x);
                     self.st.number_stack.push(y);
                 }
                 Opcode::TRAP => {
                     // We are going to say that TRAPs always have a numeric code on the number stack to define which TRAP is being called
-                    let trap_id = self.st.number_stack.pop()?;
+                    let trap_id = self
+                        .st
+                        .number_stack
+                        .pop()
+                        .ok_or(StackMachineError::NoneError)?;
                     for h in self.trap_handlers.iter_mut() {
-                        if let TrapHandled::Handled = h.handle_trap(trap_id, &mut self.st).ok()? {
+                        if let TrapHandled::Handled = h.handle_trap(trap_id, &mut self.st)? {
                             return Ok(());
                         }
                     }

@@ -8,19 +8,11 @@ pub enum GasLimit {
 #[derive(Debug)]
 pub enum StackMachineError {
     UnkownError,
-    NoneError,
     NumberStackUnderflow,
     UnhandledTrap,
     RanOutOfGas,
 }
-/*
-/// Helper to convert a Some/None return to a ForthError error code.
-impl From<option::NoneError> for StackMachineError {
-    fn from(_: option::NoneError) -> Self {
-        StackMachineError::NoneError
-    }
-}
-*/
+
 pub enum TrapHandled {
     Handled,
     NotHandled,
@@ -143,7 +135,7 @@ impl StackMachine {
                         .number_stack
                         .pop()
                         .map(|x| x as usize)
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     pc_reset = true;
                 }
                 Opcode::JR => {
@@ -152,7 +144,8 @@ impl StackMachine {
                             .st
                             .number_stack
                             .pop()
-                            .ok_or(StackMachineError::NoneError)? as i128;
+                            .ok_or(StackMachineError::NumberStackUnderflow)?
+                            as i128;
                     self.st.pc = usize::try_from(new_offset).unwrap();
                     pc_reset = true;
                 }
@@ -163,7 +156,7 @@ impl StackMachine {
                         .number_stack
                         .pop()
                         .map(|x| x as usize)
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     pc_reset = true;
                 }
                 Opcode::CMPZ => {
@@ -171,7 +164,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     if x == 0 {
                         self.st.number_stack.push(0);
                     } else {
@@ -183,7 +176,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     if x == 0 {
                         self.st.number_stack.push(-1);
                     } else {
@@ -196,12 +189,13 @@ impl StackMachine {
                             .st
                             .number_stack
                             .pop()
-                            .ok_or(StackMachineError::NoneError)? as i128;
+                            .ok_or(StackMachineError::NumberStackUnderflow)?
+                            as i128;
                     let x = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     if x == 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
@@ -213,12 +207,13 @@ impl StackMachine {
                             .st
                             .number_stack
                             .pop()
-                            .ok_or(StackMachineError::NoneError)? as i128;
+                            .ok_or(StackMachineError::NumberStackUnderflow)?
+                            as i128;
                     let x = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     if x != 0 {
                         self.st.pc = usize::try_from(new_offset).unwrap();
                         pc_reset = true;
@@ -230,7 +225,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                 }
                 Opcode::RET => {
                     match self.st.return_stack.pop() {
@@ -244,12 +239,12 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     let y = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x + y);
                 }
                 Opcode::SUB => {
@@ -257,12 +252,12 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     let y = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x - y);
                 }
                 Opcode::MUL => {
@@ -270,12 +265,12 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     let y = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x * y);
                 }
                 Opcode::DIV => {
@@ -283,12 +278,12 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     let y = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x / y);
                 }
                 Opcode::NOT => {
@@ -296,7 +291,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(!x);
                 }
                 Opcode::DUP => {
@@ -304,7 +299,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x);
                     self.st.number_stack.push(x);
                 }
@@ -313,12 +308,12 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     let y = self
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     self.st.number_stack.push(x);
                     self.st.number_stack.push(y);
                 }
@@ -328,7 +323,7 @@ impl StackMachine {
                         .st
                         .number_stack
                         .pop()
-                        .ok_or(StackMachineError::NoneError)?;
+                        .ok_or(StackMachineError::NumberStackUnderflow)?;
                     for h in self.trap_handlers.iter_mut() {
                         if let TrapHandled::Handled = h.handle_trap(trap_id, &mut self.st)? {
                             return Ok(());
@@ -870,7 +865,9 @@ mod tests {
 
         sm.trap_handlers
             .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
-                st.number_stack.pop()?;
+                st.number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 st.number_stack.push(200);
                 Ok(TrapHandled::Handled)
             })));
@@ -894,19 +891,25 @@ mod tests {
 
         sm.trap_handlers
             .push(Box::from(TrapHandler::new(-100, |_trap_id, st| {
-                st.number_stack.pop()?;
+                st.number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 st.number_stack.push(-100);
                 Ok(TrapHandled::Handled)
             })));
         sm.trap_handlers
             .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
-                st.number_stack.pop()?;
+                st.number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 st.number_stack.push(200);
                 Ok(TrapHandled::Handled)
             })));
         sm.trap_handlers
             .push(Box::from(TrapHandler::new(-200, |_trap_id, st| {
-                st.number_stack.pop()?;
+                st.number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 st.number_stack.push(-200);
                 Ok(TrapHandled::Handled)
             })));

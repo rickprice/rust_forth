@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 
 pub use super::stack_machine::HandleTrap;
+pub use super::stack_machine::StackMachineError;
 pub use super::stack_machine::TrapHandled;
 pub use super::stack_machine::TrapHandler;
 
@@ -555,8 +556,14 @@ mod tests {
         fc.sm
             .trap_handlers
             .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
-                let io_port = st.number_stack.pop()?;
-                let io_value = st.number_stack.pop()?;
+                let io_port = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
+                let io_value = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 println!(
                     "Simulated IO OUT command to Port: {} and Value: {}",
                     io_port, io_value
@@ -582,7 +589,10 @@ mod tests {
         fc.sm
             .trap_handlers
             .push(Box::from(TrapHandler::new(101, |_trap_id, st| {
-                let io_port = st.number_stack.pop()?;
+                let io_port = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 let io_value = 654321_i64;
                 println!(
                     "Simulated IO IN command from Port: {} and Value: {}",
@@ -607,8 +617,14 @@ mod tests {
         fc.sm
             .trap_handlers
             .push(Box::from(TrapHandler::new(100, |_trap_id, st| {
-                let io_port = st.number_stack.pop()?;
-                let io_value = st.number_stack.pop()?;
+                let io_port = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
+                let io_value = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 println!(
                     "Simulated IO OUT command to Port: {} and Value: {}",
                     io_port, io_value
@@ -634,7 +650,10 @@ mod tests {
         fc.sm
             .trap_handlers
             .push(Box::from(TrapHandler::new(101, |_trap_id, st| {
-                let io_port = st.number_stack.pop()?;
+                let io_port = st
+                    .number_stack
+                    .pop()
+                    .ok_or(StackMachineError::NumberStackUnderflow)?;
                 let io_value = 654321_i64;
                 println!(
                     "Simulated IO IN command from Port: {} and Value: {}",

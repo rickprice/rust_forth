@@ -4,7 +4,6 @@ use super::stack_machine::StackMachineError;
 #[derive(Debug)]
 pub enum ForthError {
     UnknownError,
-    NoneError,
     UnknownToken(String),
     PopOfEmptyStack,
     InvalidSyntax(String),
@@ -27,7 +26,6 @@ impl From<std::io::Error> for ForthError {
 impl From<StackMachineError> for ForthError {
     fn from(err: StackMachineError) -> ForthError {
         match err {
-            StackMachineError::NoneError => ForthError::NoneError,
             StackMachineError::NumberStackUnderflow => ForthError::PopOfEmptyStack,
             StackMachineError::UnkownError => ForthError::UnknownError,
             StackMachineError::UnhandledTrap => ForthError::UnhandledTrap,
@@ -47,16 +45,7 @@ impl From<ForthError> for i32 {
             ForthError::MissingSemicolonAfterColon => 6,
             ForthError::Io(_) => 7,
             ForthError::UnhandledTrap => 8,
-            ForthError::NoneError => 9,
-            ForthError::RanOutOfGas => 10,
+            ForthError::RanOutOfGas => 9,
         }
     }
 }
-/*
-/// Helper to convert a Some/None return to a ForthError error code.
-impl From<option::NoneError> for ForthError {
-    fn from(_: option::NoneError) -> Self {
-        ForthError::NoneError
-    }
-}
-*/

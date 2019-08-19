@@ -1,15 +1,14 @@
-use exit::Exit;
 use rust_forth::forth_compiler::ForthCompiler;
 use rust_forth::stack_machine::GasLimit;
 use rust_forth::ForthError;
 use std::fs;
 
-fn main() -> Exit<ForthError> {
+fn main() -> Result<(), ForthError> {
     println!("Hello, world! This is rust_forth");
 
     run()?;
 
-    Exit::Ok
+    Ok(())
 }
 
 fn run() -> Result<(), ForthError> {

@@ -1,5 +1,4 @@
 use super::stack_machine::StackMachineError;
-use std::option;
 
 /// This Enum lists the errors that the Forth Interpreter might return
 #[derive(Debug)]
@@ -53,10 +52,11 @@ impl From<ForthError> for i32 {
         }
     }
 }
-
+/*
 /// Helper to convert a Some/None return to a ForthError error code.
 impl From<option::NoneError> for ForthError {
     fn from(_: option::NoneError) -> Self {
         ForthError::NoneError
     }
 }
+*/
